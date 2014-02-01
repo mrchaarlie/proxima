@@ -18,6 +18,8 @@
 		BD2DF157189C783400664E47 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BD2DF136189C783400664E47 /* Cocoa.framework */; };
 		BD2DF15F189C783400664E47 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = BD2DF15D189C783400664E47 /* InfoPlist.strings */; };
 		BD2DF161189C783400664E47 /* ProximaTests.m in Sources */ = {isa = PBXBuildFile; fileRef = BD2DF160189C783400664E47 /* ProximaTests.m */; };
+		BD2DF16B189C7C2000664E47 /* QuartzCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BD2DF16A189C7C2000664E47 /* QuartzCore.framework */; };
+		BD2DF16D189C7C2800664E47 /* IOBluetooth.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BD2DF16C189C7C2800664E47 /* IOBluetooth.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -50,6 +52,8 @@
 		BD2DF15C189C783400664E47 /* ProximaTests-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "ProximaTests-Info.plist"; sourceTree = "<group>"; };
 		BD2DF15E189C783400664E47 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		BD2DF160189C783400664E47 /* ProximaTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = ProximaTests.m; sourceTree = "<group>"; };
+		BD2DF16A189C7C2000664E47 /* QuartzCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QuartzCore.framework; path = System/Library/Frameworks/QuartzCore.framework; sourceTree = SDKROOT; };
+		BD2DF16C189C7C2800664E47 /* IOBluetooth.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = IOBluetooth.framework; path = System/Library/Frameworks/IOBluetooth.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -57,6 +61,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				BD2DF16D189C7C2800664E47 /* IOBluetooth.framework in Frameworks */,
+				BD2DF16B189C7C2000664E47 /* QuartzCore.framework in Frameworks */,
 				BD2DF137189C783400664E47 /* Cocoa.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -95,6 +101,8 @@
 		BD2DF135189C783400664E47 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				BD2DF16C189C7C2800664E47 /* IOBluetooth.framework */,
+				BD2DF16A189C7C2000664E47 /* QuartzCore.framework */,
 				BD2DF136189C783400664E47 /* Cocoa.framework */,
 				BD2DF155189C783400664E47 /* XCTest.framework */,
 				BD2DF138189C783400664E47 /* Other Frameworks */,
