@@ -15,14 +15,18 @@
 
 - (void)applicationDidFinishLaunching:(NSNotification *)aNotification
 {
-
+    //initially the 'connect' button is disabled because we are going to try to connect automatically first
     [connectButton setEnabled:FALSE];
     
     manager = [[CBCentralManager alloc] initWithDelegate:self queue:nil];
+    
+    //if there is a current peripheral connected, we are going to disconnect it and then try to reconnect , for now we are just doing this to ensure that every time we run the app its a new connection, nothing funny going on
     if(self.peripheral)
     {
-    [manager cancelPeripheralConnection:self.peripheral];
+        [manager cancelPeripheralConnection:self.peripheral];
     }
+    
+    //now that the existing peripheral has been cancelled, we will start a timer that continuously scans for the device, once the device has been found, the timer stops and is invalidated
     initiateTimer=[NSTimer timerWithTimeInterval:1.0 target:self selector:@selector(startScan) userInfo:nil repeats:YES];
     
     
@@ -39,6 +43,7 @@
  */
 - (void) applicationWillTerminate:(NSNotification *)notification
 {
+    //cancel current peripherals when we close the app
     if(peripheral)
     {
         [manager cancelPeripheralConnection:peripheral];
@@ -85,6 +90,7 @@
  */
 - (void) startScan
 {
+    //change the text in the feedback label to say connecting, so user knows the scan has started
     [statusConnection setStringValue:@"Connecting"];
     [manager scanForPeripheralsWithServices:nil options:nil];
 }
@@ -129,19 +135,28 @@
  */
 - (void) centralManager:(CBCentralManager *)central didDiscoverPeripheral:(CBPeripheral *)aPeripheral advertisementData:(NSDictionary *)advertisementData RSSI:(NSNumber *)RSSI
 {
+    //the manager found a device, we will stop and invalidate the timer
     [initiateTimer invalidate];
     initiateTimer=nil;
+    
+    //initialise the peripherals array -- we aren't really using this just yet
     if(!self.peripherals)
     {
-    self.peripherals = [[NSMutableArray alloc] init];
+        self.peripherals = [[NSMutableArray alloc] init];
     }
+    
+    //if the peripheral has a name -- My Arduino 71:C6:86 then we are going to connect to it.
     if(aPeripheral && [aPeripheral.name isEqualToString:@"My Arduino 71:C6:86"])
     {
-    [manager connectPeripheral:aPeripheral options:nil];
+        [manager connectPeripheral:aPeripheral options:nil];
+        
+        //have to set the current peripheral to a strong variable so that it is retained and doesn't get dealloced while it is being connected
         self.peripheral=aPeripheral;
 
     }
-    /* Retreive already known devices */
+    
+    
+    /* Retreive already known devices */ //--- not really using this right now either
     if(autoConnect)
     {
         [manager retrieveConnectedPeripheralsWithServices:[NSArray arrayWithObject:(id)aPeripheral.identifier]];
@@ -172,6 +187,8 @@
  */
 - (void) centralManager:(CBCentralManager *)central didConnectPeripheral:(CBPeripheral *)aPeripheral
 {
+    
+    //once the peripheral has been connected, we update the feedbac, label, enable the connect button and change its label to 'disconnect'
     [aPeripheral setDelegate:self];
     [aPeripheral discoverServices:nil];
 	[statusConnection setStringValue:@"Connected"];
@@ -213,6 +230,8 @@
 /*
  Invoked upon completion of a -[discoverServices:] request.
  Discover available characteristics on interested services
+ 
+ ####aren't using this just yet, but might be able to use it later when we add the rfid stuff
  */
 - (void) peripheral:(CBPeripheral *)aPeripheral didDiscoverServices:(NSError *)error
 {

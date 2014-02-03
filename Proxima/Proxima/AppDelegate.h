@@ -9,19 +9,20 @@
 #import <Cocoa/Cocoa.h>
 #import <IOBluetooth/IOBluetooth.h>
 
+
 @interface AppDelegate : NSObject <NSApplicationDelegate, CBCentralManagerDelegate, CBPeripheralDelegate>
 {
     
-    CBCentralManager *manager;
-    CBPeripheral *peripheral;
-    NSMutableArray *peripherals;
-    NSString *manufacturer;
+    CBCentralManager *manager;   //bluetooth connection manager
+    CBPeripheral *peripheral;   //peripheral = bluetooth device thats been detected
+    NSMutableArray *peripherals; //an array containing all detected peripherals matching Proxima criteria
+    NSString *manufacturer; //the manufacturer of the peripheral
     
-    BOOL autoConnect;
-    NSTimer *initiateTimer;
+    BOOL autoConnect; //boolean value, should the device autoconnect?
+    NSTimer *initiateTimer;  //timer is used to continusely check for peripherals until one is found
     
-    IBOutlet NSTextField *statusConnection;
-    IBOutlet NSButton *connectButton;
+    IBOutlet NSTextField *statusConnection; //feedback to the user as to what the status of the current connection is (disconnected connected, etc)
+    IBOutlet NSButton *connectButton; // will allow users to manually connect and disconnect from proxima
 
 
 }
