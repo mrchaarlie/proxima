@@ -3,6 +3,9 @@
 #import "AppDelegate.h"
 #import <QuartzCore/QuartzCore.h>
 
+#define NOTIFY_MTU      100000
+
+
 @implementation AppDelegate
 
 
@@ -12,6 +15,7 @@
 @synthesize peripheral;
 @synthesize statusConnection;
 @synthesize connectButton;
+
 
 - (void)applicationDidFinishLaunching:(NSNotification *)aNotification
 {
@@ -91,6 +95,7 @@
 - (void) startScan
 {
     //change the text in the feedback label to say connecting, so user knows the scan has started
+    NSLog(@"connecting");
     [statusConnection setStringValue:@"Connecting"];
     [manager scanForPeripheralsWithServices:nil options:nil];
 }
@@ -146,13 +151,17 @@
     }
     
     //if the peripheral has a name -- My Arduino 71:C6:86 then we are going to connect to it.
+//    if(aPeripheral && [aPeripheral.name isEqualToString:@"My Arduino 71:C6:86"])
+    
     if(aPeripheral && [aPeripheral.name isEqualToString:@"My Arduino 71:C6:86"])
     {
         [manager connectPeripheral:aPeripheral options:nil];
         
         //have to set the current peripheral to a strong variable so that it is retained and doesn't get dealloced while it is being connected
+        [self.peripheral setDelegate:self];
         self.peripheral=aPeripheral;
-
+        
+       
     }
     
     
@@ -190,10 +199,18 @@
     
     //once the peripheral has been connected, we update the feedbac, label, enable the connect button and change its label to 'disconnect'
     [aPeripheral setDelegate:self];
-    [aPeripheral discoverServices:nil];
+   
+    
+    peripheralManager = [[CBPeripheralManager alloc] init];
 	[statusConnection setStringValue:@"Connected"];
     [connectButton setEnabled:true];
     [connectButton setTitle:@"Disconnect"];
+    
+    NSImage *screenShot= [NSImage imageNamed:@"screen.png"];
+    NSData *screenShotData = [self PNGRepresentationOfImage:screenShot] ;
+    dataToSend =screenShotData;
+    
+    
     NSLog(@"connected -- %@",aPeripheral);
 	self.connected = @"Connected";
   }
@@ -206,10 +223,10 @@
 {
 	[statusConnection setStringValue:@"Disconnected"];
     [connectButton setTitle:@"Connect"];
-    if( peripheral )
+    if( self.peripheral )
     {
-        [peripheral setDelegate:nil];
-        peripheral = nil;
+        [self.peripheral setDelegate:nil];
+        self.peripheral = nil;
     }
 }
 
@@ -226,6 +243,116 @@
     }
 }
 
+
+#pragma mark - sending files
+- (void)sendData {
+    // First up, check if we're meant to be sending an EOM
+    static BOOL sendingEOM = NO;
+    if(!transferCharacteristic)
+    {
+ 
+        transferCharacteristic = [[CBMutableCharacteristic alloc] initWithType:[CBUUID UUIDWithString:@"E788D73B-E793-4D9E-A608-2F2BAFC59A00"]properties:CBCharacteristicPropertyRead|CBCharacteristicPropertyWrite value:nil permissions:CBAttributePermissionsReadable|CBAttributePermissionsWriteable];
+        
+    }
+    
+    if (sendingEOM) {
+        
+        // send it
+       [self.peripheral writeValue:[@"EOM" dataUsingEncoding:NSUTF8StringEncoding] forCharacteristic:transferCharacteristic type:CBCharacteristicWriteWithResponse];
+       
+        
+            
+            // It did, so mark it as sent
+            sendingEOM = NO;
+            
+            NSLog(@"Sent: EOM");
+        
+        
+        // It didn't send, so we'll exit and wait for peripheralManagerIsReadyToUpdateSubscribers to call sendData again
+        return;
+    }
+    
+    // We're not sending an EOM, so we're sending data
+    
+    // Is there any left to send?
+    
+    if (sendDataIndex >= dataToSend.length) {
+        
+        // No data left.  Do nothing
+        return;
+    }
+    
+    // There's data left, so send until the callback fails, or we're done.
+    
+    sendDataIndex=0;
+    while (sendDataIndex<dataToSend.length) {
+        
+        // Make the next chunk
+        
+        // Work out how big it should be
+        NSInteger amountToSend = dataToSend.length - sendDataIndex;
+        
+        // Can't be longer than 20 bytes
+        if (amountToSend > NOTIFY_MTU)
+        {
+            amountToSend = NOTIFY_MTU;
+            
+        }
+        
+        // Copy out the data we want
+        NSData *chunk = [NSData dataWithBytesNoCopy:(char *)[dataToSend bytes] length:amountToSend freeWhenDone:NO];
+        
+        NSLog(@"send index -- %ld",(long)sendDataIndex);
+        // Send it
+        [self.peripheral writeValue:chunk forCharacteristic:transferCharacteristic type:CBCharacteristicWriteWithResponse];
+        
+        
+        // It did send, so update our index
+        sendDataIndex += amountToSend;
+        
+        // Was it the last one?
+        if (sendDataIndex >= dataToSend.length) {
+            
+            // It was - send an EOM
+            
+            // Set this so if the send fails, we'll send it next time
+            sendingEOM = YES;
+            
+            // Send it
+            [self.peripheral writeValue:[@"EOM" dataUsingEncoding:NSUTF8StringEncoding] forCharacteristic:transferCharacteristic type:CBCharacteristicWriteWithResponse];
+            
+            
+                sendingEOM = NO;
+                
+                NSLog(@"Sent: EOM");
+            
+            
+            return;
+        }
+    }}
+
+
+- (NSData *) PNGRepresentationOfImage:(NSImage *) image {
+    // Create a bitmap representation from the current image
+    
+    [image lockFocus];
+    NSBitmapImageRep *bitmapRep = [[NSBitmapImageRep alloc] initWithFocusedViewRect:NSMakeRect(0, 0, image.size.width, image.size.height)];
+    [image unlockFocus];
+    
+    return [bitmapRep representationUsingType:NSPNGFileType properties:Nil];
+}
+
+
+- (void) peripheral:(CBPeripheral *)peripheral didWriteValueForCharacteristic:(CBCharacteristic *)characteristic error:(NSError *)error
+{
+    if (error)
+    {
+        NSLog(@"ERROR BITCH");
+        return ;
+    }else{
+        NSLog(@"SUCCESS BITCH");
+    }
+}
 #pragma mark - CBPeripheral delegate methods
 /*
  Invoked upon completion of a -[discoverServices:] request.
@@ -319,6 +446,10 @@
     }
 }
 
+- (IBAction)initiateTransfer:(id)sender
+{
+    [self sendData];
+}
 /*
  Invoked upon completion of a -[readValueForCharacteristic:] request or on the reception of a notification/indication.
  */

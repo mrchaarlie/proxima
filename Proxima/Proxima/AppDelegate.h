@@ -15,6 +15,7 @@
     
     CBCentralManager *manager;   //bluetooth connection manager
     CBPeripheral *peripheral;   //peripheral = bluetooth device thats been detected
+    CBPeripheralManager *peripheralManager;
     NSMutableArray *peripherals; //an array containing all detected peripherals matching Proxima criteria
     NSString *manufacturer; //the manufacturer of the peripheral
     
@@ -24,7 +25,9 @@
     IBOutlet NSTextField *statusConnection; //feedback to the user as to what the status of the current connection is (disconnected connected, etc)
     IBOutlet NSButton *connectButton; // will allow users to manually connect and disconnect from proxima
 
-
+    CBMutableCharacteristic *transferCharacteristic;
+    NSInteger sendDataIndex;
+    NSData *dataToSend;
 }
 
 
@@ -33,6 +36,7 @@
 @property (nonatomic,strong) NSString *manufacturer;
 @property (copy) NSString *connected;
 
+- (IBAction)initiateTransfer:(id)sender;
 - (IBAction)connectButtonSelected:(id)sender;
 - (void) startScan;
 - (void) stopScan;

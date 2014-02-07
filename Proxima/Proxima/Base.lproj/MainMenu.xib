@@ -675,6 +675,17 @@
                             <action selector="connectButtonSelected:" target="494" id="PXZ-1T-Efk"/>
                         </connections>
                     </button>
+                    <button verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="rSC-kB-twk">
+                        <rect key="frame" x="20" y="48" width="116" height="23"/>
+                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                        <buttonCell key="cell" type="smallSquare" title="Transfer" bezelStyle="smallSquare" imagePosition="overlaps" alignment="center" state="on" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="Xfu-gF-r8t">
+                            <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
+                            <font key="font" metaFont="system"/>
+                        </buttonCell>
+                        <connections>
+                            <action selector="initiateTransfer:" target="494" id="Eug-nW-Yzi"/>
+                        </connections>
+                    </button>
                 </subviews>
             </view>
         </window>
