@@ -3,7 +3,7 @@
 #import "AppDelegate.h"
 #import <QuartzCore/QuartzCore.h>
 
-#define NOTIFY_MTU      100000
+#define NOTIFY_MTU      16
 
 
 @implementation AppDelegate
@@ -206,9 +206,10 @@
     [connectButton setEnabled:true];
     [connectButton setTitle:@"Disconnect"];
     
-    NSImage *screenShot= [NSImage imageNamed:@"screen.png"];
-    NSData *screenShotData = [self PNGRepresentationOfImage:screenShot] ;
-    dataToSend =screenShotData;
+//    NSImage *screenShot= [NSImage imageNamed:@"screen.png"];
+//    NSData *screenShotData = [self PNGRepresentationOfImage:screenShot] ;
+    NSData *fooData = [@"foo" dataUsingEncoding:NSUTF8StringEncoding];
+    dataToSend =fooData;
     
     
     NSLog(@"connected -- %@",aPeripheral);
@@ -248,6 +249,7 @@
 - (void)sendData {
     // First up, check if we're meant to be sending an EOM
     static BOOL sendingEOM = NO;
+    NSLog(@"status -- %ld",self.peripheral.state);
     if(!transferCharacteristic)
     {
  
@@ -470,6 +472,7 @@
         uint8_t* dataPointer = (uint8_t*)[updatedValue bytes];
         if(dataPointer)
         {
+            
                   }
     }
     /* Value for device Name received */
