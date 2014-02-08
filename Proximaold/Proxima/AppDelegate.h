@@ -29,9 +29,11 @@
     NSInteger sendDataIndex;
     NSData *dataToSend;
     CBUUID *serviceUUID;
+    
 }
 
 
+@property (nonatomic,strong) NSTimer *initiateTimer;
 @property (strong)CBPeripheral *peripheral;
 @property (nonatomic,strong)  NSMutableArray *peripherals;
 @property (nonatomic,strong) NSString *manufacturer;
@@ -42,6 +44,7 @@
 - (void) startScan;
 - (void) stopScan;
 - (BOOL) isLECapableHardware;
+- (void) testingRssi;
 
 
 @property (strong) IBOutlet NSButton *connectButton;

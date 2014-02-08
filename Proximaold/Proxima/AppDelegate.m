@@ -10,12 +10,13 @@
 
 
 @synthesize connected;
+
 @synthesize manufacturer;
 @synthesize peripherals;
 @synthesize peripheral;
 @synthesize statusConnection;
 @synthesize connectButton;
-
+@synthesize initiateTimer;
 
 - (void)applicationDidFinishLaunching:(NSNotification *)aNotification
 {
@@ -31,7 +32,8 @@
     }
     
     //now that the existing peripheral has been cancelled, we will start a timer that continuously scans for the device, once the device has been found, the timer stops and is invalidated
-    initiateTimer=[NSTimer timerWithTimeInterval:1.0 target:self selector:@selector(startScan) userInfo:nil repeats:YES];
+    self.initiateTimer=[NSTimer scheduledTimerWithTimeInterval:1.0 target:self selector:@selector(startScan) userInfo:nil repeats:YES];
+    
     
     
 }
@@ -140,37 +142,37 @@
  */
 - (void) centralManager:(CBCentralManager *)central didDiscoverPeripheral:(CBPeripheral *)aPeripheral advertisementData:(NSDictionary *)advertisementData RSSI:(NSNumber *)RSSI
 {
-    //the manager found a device, we will stop and invalidate the timer
-    [initiateTimer invalidate];
-    initiateTimer=nil;
-    
-    //initialise the peripherals array -- we aren't really using this just yet
-    if(!self.peripherals)
-    {
-        self.peripherals = [[NSMutableArray alloc] init];
-    }
+
     
     //if the peripheral has a name -- My Arduino 71:C6:86 then we are going to connect to it.
 //    if(aPeripheral && [aPeripheral.name isEqualToString:@"My Arduino 71:C6:86"])
     
-    if(aPeripheral && [aPeripheral.name rangeOfString:@"My Arduino"].location!=NSNotFound)
+    NSLog(@"rssi -- %@", RSSI);
+    //the manager found a device, we will stop and invalidate the timer
+    [self.initiateTimer invalidate];
+    self.initiateTimer=nil;
+    
+    if(aPeripheral && [aPeripheral.name rangeOfString:@"My Arduino" ].location!=NSNotFound && [RSSI intValue] > -40)
     {
+     
         [manager connectPeripheral:aPeripheral options:nil];
         
         //have to set the current peripheral to a strong variable so that it is retained and doesn't get dealloced while it is being connected
         [self.peripheral setDelegate:self];
         self.peripheral=aPeripheral;
-        
-       
+        return;
+      
     }
     
-    
+      self.initiateTimer=[NSTimer scheduledTimerWithTimeInterval:1.0 target:self selector:@selector(startScan) userInfo:nil repeats:YES];
     /* Retreive already known devices */ //--- not really using this right now either
     if(autoConnect)
     {
         [manager retrieveConnectedPeripheralsWithServices:[NSArray arrayWithObject:(id)aPeripheral.identifier]];
     }
 }
+
+
 
 /*
  Invoked when the central manager retrieves the list of known peripherals.
@@ -200,6 +202,7 @@
     //once the peripheral has been connected, we update the feedbac, label, enable the connect button and change its label to 'disconnect'
     [aPeripheral setDelegate:self];
    
+
     
     peripheralManager = [[CBPeripheralManager alloc] init];
     
@@ -218,6 +221,9 @@
     
     NSLog(@"connected -- %@",aPeripheral);
 	self.connected = @"Connected";
+    
+
+    
   }
 
 /*
@@ -394,43 +400,13 @@
  */
 - (void) peripheral:(CBPeripheral *)aPeripheral didDiscoverCharacteristicsForService:(CBService *)service error:(NSError *)error
 {
-//    if ([service.UUID isEqual:[CBUUID UUIDWithString:@"180D"]])
-//    {
-//        for (CBCharacteristic *aChar in service.characteristics)
-//        {
-//            /* Set notification on heart rate measurement */
-//            if ([aChar.UUID isEqual:[CBUUID UUIDWithString:@"2A37"]])
-//            {
-//                [peripheral setNotifyValue:YES forCharacteristic:aChar];
-//                NSLog(@"Found a Heart Rate Measurement Characteristic");
-//            }
-//            /* Read body sensor location */
-//            if ([aChar.UUID isEqual:[CBUUID UUIDWithString:@"2A38"]])
-//            {
-//                [aPeripheral readValueForCharacteristic:aChar];
-//                NSLog(@"Found a Body Sensor Location Characteristic");
-//            }
-//            
-//            /* Write heart rate control point */
-//            if ([aChar.UUID isEqual:[CBUUID UUIDWithString:@"2A39"]])
-//            {
-//                uint8_t val = 1;
-//                NSData* valData = [NSData dataWithBytes:(void*)&val length:sizeof(val)];
-//                [aPeripheral writeValue:valData forCharacteristic:aChar type:CBCharacteristicWriteWithResponse];
-//            }
-//        }
-//    }
+
     
     if ( [service.UUID isEqual:[CBUUID UUIDWithString:CBUUIDGenericAccessProfileString]] )
     {
         for (CBCharacteristic *aChar in service.characteristics)
         {
-            
-            
-            
-            
-            
-            
+          
             /* Read device name */
             if ([aChar.UUID isEqual:[CBUUID UUIDWithString:CBUUIDDeviceNameString]])
             {
