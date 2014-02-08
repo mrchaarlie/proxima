@@ -3,7 +3,7 @@
 #import "AppDelegate.h"
 #import <QuartzCore/QuartzCore.h>
 
-#define NOTIFY_MTU      16
+#define NOTIFY_MTU      99
 
 
 @implementation AppDelegate
@@ -153,7 +153,7 @@
     //if the peripheral has a name -- My Arduino 71:C6:86 then we are going to connect to it.
 //    if(aPeripheral && [aPeripheral.name isEqualToString:@"My Arduino 71:C6:86"])
     
-    if(aPeripheral && [aPeripheral.name isEqualToString:@"My Arduino 71:C6:86"])
+    if(aPeripheral && [aPeripheral.name rangeOfString:@"My Arduino"].location!=NSNotFound)
     {
         [manager connectPeripheral:aPeripheral options:nil];
         
@@ -202,10 +202,14 @@
    
     
     peripheralManager = [[CBPeripheralManager alloc] init];
+    
 	[statusConnection setStringValue:@"Connected"];
     [connectButton setEnabled:true];
     [connectButton setTitle:@"Disconnect"];
-    
+    [aPeripheral discoverServices:nil];
+   // [aPeripheral discoverCharacteristics:nil forService:];
+    // add some characteristics, also identified by your own custom UUIDs.
+//    
 //    NSImage *screenShot= [NSImage imageNamed:@"screen.png"];
 //    NSData *screenShotData = [self PNGRepresentationOfImage:screenShot] ;
     NSData *fooData = [@"foo" dataUsingEncoding:NSUTF8StringEncoding];
@@ -250,12 +254,7 @@
     // First up, check if we're meant to be sending an EOM
     static BOOL sendingEOM = NO;
     NSLog(@"status -- %ld",self.peripheral.state);
-    if(!transferCharacteristic)
-    {
- 
-        transferCharacteristic = [[CBMutableCharacteristic alloc] initWithType:[CBUUID UUIDWithString:@"E788D73B-E793-4D9E-A608-2F2BAFC59A00"]properties:CBCharacteristicPropertyRead|CBCharacteristicPropertyWrite value:nil permissions:CBAttributePermissionsReadable|CBAttributePermissionsWriteable];
-        
-    }
+  
     
     if (sendingEOM) {
         
@@ -279,14 +278,13 @@
     // Is there any left to send?
     
     if (sendDataIndex >= dataToSend.length) {
-        
+        sendDataIndex=0;
         // No data left.  Do nothing
         return;
     }
     
     // There's data left, so send until the callback fails, or we're done.
     
-    sendDataIndex=0;
     while (sendDataIndex<dataToSend.length) {
         
         // Make the next chunk
@@ -304,7 +302,6 @@
         // Copy out the data we want
         NSData *chunk = [NSData dataWithBytesNoCopy:(char *)[dataToSend bytes] length:amountToSend freeWhenDone:NO];
         
-        NSLog(@"send index -- %ld",(long)sendDataIndex);
         // Send it
         [self.peripheral writeValue:chunk forCharacteristic:transferCharacteristic type:CBCharacteristicWriteWithResponse];
         
@@ -319,7 +316,7 @@
             
             // Set this so if the send fails, we'll send it next time
             sendingEOM = YES;
-            
+            sendDataIndex=0;
             // Send it
             [self.peripheral writeValue:[@"EOM" dataUsingEncoding:NSUTF8StringEncoding] forCharacteristic:transferCharacteristic type:CBCharacteristicWriteWithResponse];
             
@@ -349,7 +346,7 @@
 {
     if (error)
     {
-        NSLog(@"ERROR BITCH");
+        NSLog(@"ERROR BITCH %@", error);
         return ;
     }else{
         NSLog(@"SUCCESS BITCH");
@@ -372,19 +369,22 @@
         if ([aService.UUID isEqual:[CBUUID UUIDWithString:@"180D"]])
         {
             [aPeripheral discoverCharacteristics:nil forService:aService];
-        }
-        
-        /* Device Information Service */
-        if ([aService.UUID isEqual:[CBUUID UUIDWithString:@"180A"]])
+        }else if ([aService.UUID isEqual:[CBUUID UUIDWithString:@"180A"]])
         {
+            [aPeripheral discoverCharacteristics:nil forService:aService];
+        }else if ( [aService.UUID isEqual:[CBUUID UUIDWithString:CBUUIDGenericAccessProfileString]] )
+        {
+            [aPeripheral discoverCharacteristics:nil forService:aService];
+        }else{
             [aPeripheral discoverCharacteristics:nil forService:aService];
         }
         
+//        if([aService.UUID isEqual:[CBUUID UUIDWithString:@"195ae58a 437a489b b0cdb7c9 c394bae4"]])
+//        {
+//            NSLog(@"yay");
+//        }
         /* GAP (Generic Access Profile) for Device Name */
-        if ( [aService.UUID isEqual:[CBUUID UUIDWithString:CBUUIDGenericAccessProfileString]] )
-        {
-            [aPeripheral discoverCharacteristics:nil forService:aService];
-        }
+        
     }
 }
 
@@ -425,16 +425,22 @@
     {
         for (CBCharacteristic *aChar in service.characteristics)
         {
+            
+            
+            
+            
+            
+            
             /* Read device name */
             if ([aChar.UUID isEqual:[CBUUID UUIDWithString:CBUUIDDeviceNameString]])
             {
                 [aPeripheral readValueForCharacteristic:aChar];
                 NSLog(@"Found a Device Name Characteristic");
             }
+            
+           
         }
-    }
-    
-    if ([service.UUID isEqual:[CBUUID UUIDWithString:@"180A"]])
+    }else if ([service.UUID isEqual:[CBUUID UUIDWithString:@"180A"]])
     {
         for (CBCharacteristic *aChar in service.characteristics)
         {
@@ -444,6 +450,16 @@
                 [aPeripheral readValueForCharacteristic:aChar];
                 NSLog(@"Found a Device Manufacturer Name Characteristic");
             }
+        }
+    }else{
+        NSLog(@"foo");
+        for (CBCharacteristic *aChar in service.characteristics)
+        {
+            if([service.characteristics indexOfObject:aChar]==0)
+            {
+            transferCharacteristic=(CBMutableCharacteristic*)aChar;
+            }
+
         }
     }
 }

@@ -28,6 +28,7 @@
     CBMutableCharacteristic *transferCharacteristic;
     NSInteger sendDataIndex;
     NSData *dataToSend;
+    CBUUID *serviceUUID;
 }
 
 

@@ -114,7 +114,7 @@ void setup() {
    
     // open BLE software serial port
     bleSerialPort.begin(38400);
-     Serial.println("HelloWord");
+     Serial.println(GATT_HANDLE_C_TX_DATA);
     my_ble_evt_system_boot( NULL);
 }
 
@@ -122,9 +122,7 @@ void setup() {
 void loop() {
     // keep polling for new data from BLE
     ble112.checkActivity();
-    int sensorValue = analogRead(A0);
-    // blink Arduino LED based on state:
-     Serial.println(sensorValue);
+  
       delay(1);     
     //  - solid = STANDBY
     //  - 1 pulse per second = ADVERTISING
