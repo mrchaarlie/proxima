@@ -13,7 +13,7 @@
 
 @synthesize manufacturer;
 @synthesize peripherals;
-@synthesize peripheral;
+@synthesize proxima;
 @synthesize statusConnection;
 @synthesize connectButton;
 @synthesize initiateTimer;
@@ -26,9 +26,9 @@
     manager = [[CBCentralManager alloc] initWithDelegate:self queue:nil];
     
     //if there is a current peripheral connected, we are going to disconnect it and then try to reconnect , for now we are just doing this to ensure that every time we run the app its a new connection, nothing funny going on
-    if(self.peripheral)
+    if(self.proxima)
     {
-        [manager cancelPeripheralConnection:self.peripheral];
+        [manager cancelPeripheralConnection:self.proxima];
     }
     
     //now that the existing peripheral has been cancelled, we will start a timer that continuously scans for the device, once the device has been found, the timer stops and is invalidated
@@ -50,9 +50,9 @@
 - (void) applicationWillTerminate:(NSNotification *)notification
 {
     //cancel current peripherals when we close the app
-    if(peripheral)
+    if(self.proxima)
     {
-        [manager cancelPeripheralConnection:peripheral];
+        [manager cancelPeripheralConnection:self.proxima];
     }
 }
 
@@ -131,7 +131,11 @@
     {
         [self startScan];
     }else{
-        [manager cancelPeripheralConnection:self.peripheral];
+        [rssiTimer invalidate];
+        rssiTimer = nil;
+        [initiateTimer invalidate];
+        initiateTimer =nil;
+        [manager cancelPeripheralConnection:self.proxima];
     }
 }
 
@@ -142,29 +146,32 @@
  */
 - (void) centralManager:(CBCentralManager *)central didDiscoverPeripheral:(CBPeripheral *)aPeripheral advertisementData:(NSDictionary *)advertisementData RSSI:(NSNumber *)RSSI
 {
-
-    
     //if the peripheral has a name -- My Arduino 71:C6:86 then we are going to connect to it.
-//    if(aPeripheral && [aPeripheral.name isEqualToString:@"My Arduino 71:C6:86"])
     
-    NSLog(@"rssi -- %@", RSSI);
     //the manager found a device, we will stop and invalidate the timer
-    [self.initiateTimer invalidate];
-    self.initiateTimer=nil;
     
-    if(aPeripheral && [aPeripheral.name rangeOfString:@"My Arduino" ].location!=NSNotFound && [RSSI intValue] > -40)
+    
+    if(aPeripheral && [aPeripheral.name rangeOfString:@"My Arduino" ].location!=NSNotFound && [RSSI intValue] > -42)
     {
      
         [manager connectPeripheral:aPeripheral options:nil];
         
         //have to set the current peripheral to a strong variable so that it is retained and doesn't get dealloced while it is being connected
-        [self.peripheral setDelegate:self];
-        self.peripheral=aPeripheral;
+        [self.proxima setDelegate:self];
+        self.proxima=aPeripheral;
+        
+        
+        [self.initiateTimer invalidate];
+        self.initiateTimer=nil;
         return;
       
     }
     
+    if(!self.initiateTimer)
+    {
+    
       self.initiateTimer=[NSTimer scheduledTimerWithTimeInterval:1.0 target:self selector:@selector(startScan) userInfo:nil repeats:YES];
+    }
     /* Retreive already known devices */ //--- not really using this right now either
     if(autoConnect)
     {
@@ -182,14 +189,16 @@
 {
     NSLog(@"Retrieved peripheral: %lu - %@", [p count], peripherals);
     
-    [self stopScan];
     
     /* If there are any known devices, automatically connect to it.*/
     if([p count] >=1)
     {
         
-        [manager connectPeripheral:peripheral options:[NSDictionary dictionaryWithObject:[NSNumber numberWithBool:YES] forKey:CBConnectPeripheralOptionNotifyOnDisconnectionKey]];
+        [manager connectPeripheral:self.proxima options:[NSDictionary dictionaryWithObject:[NSNumber numberWithBool:YES] forKey:CBConnectPeripheralOptionNotifyOnDisconnectionKey]];
     }
+    
+    NSDictionary *options = [NSDictionary dictionaryWithObjectsAndKeys:[NSNumber  numberWithBool:YES], CBCentralManagerScanOptionAllowDuplicatesKey, nil];
+    [manager scanForPeripheralsWithServices:nil options:options];
 }
 
 /*
@@ -198,33 +207,46 @@
  */
 - (void) centralManager:(CBCentralManager *)central didConnectPeripheral:(CBPeripheral *)aPeripheral
 {
-    
+    [manager stopScan];
     //once the peripheral has been connected, we update the feedbac, label, enable the connect button and change its label to 'disconnect'
     [aPeripheral setDelegate:self];
    
-
-    
-    peripheralManager = [[CBPeripheralManager alloc] init];
-    
 	[statusConnection setStringValue:@"Connected"];
     [connectButton setEnabled:true];
     [connectButton setTitle:@"Disconnect"];
     [aPeripheral discoverServices:nil];
-   // [aPeripheral discoverCharacteristics:nil forService:];
+
     // add some characteristics, also identified by your own custom UUIDs.
-//    
-//    NSImage *screenShot= [NSImage imageNamed:@"screen.png"];
-//    NSData *screenShotData = [self PNGRepresentationOfImage:screenShot] ;
+
     NSData *fooData = [@"foo" dataUsingEncoding:NSUTF8StringEncoding];
     dataToSend =fooData;
-    
     
     NSLog(@"connected -- %@",aPeripheral);
 	self.connected = @"Connected";
     
-
+    self.rssiTimer = [NSTimer scheduledTimerWithTimeInterval:1.0 target:self selector:@selector(checkRssi) userInfo:nil repeats:YES];
     
   }
+
+
+- (void) checkRssi
+{
+  [self.proxima readRSSI];
+}
+
+
+- (void)peripheralDidUpdateRSSI:(CBPeripheral *)peripheral error:(NSError *)error
+{
+    NSLog(@"rssi -- %@", peripheral.RSSI);
+
+    if([peripheral.RSSI intValue] < -42)
+    {
+        [manager cancelPeripheralConnection:self.proxima];
+        [self.rssiTimer invalidate];
+        self.rssiTimer = nil;
+       
+    }
+}
 
 /*
  Invoked whenever an existing connection with the peripheral is torn down.
@@ -232,13 +254,18 @@
  */
 - (void)centralManager:(CBCentralManager *)central didDisconnectPeripheral:(CBPeripheral *)aPeripheral error:(NSError *)error
 {
+  
+    
 	[statusConnection setStringValue:@"Disconnected"];
     [connectButton setTitle:@"Connect"];
-    if( self.peripheral )
+    if( self.proxima)
     {
-        [self.peripheral setDelegate:nil];
-        self.peripheral = nil;
+        [self.proxima setDelegate:nil];
+        self.proxima = nil;
     }
+   
+     self.initiateTimer=[NSTimer scheduledTimerWithTimeInterval:1.0 target:self selector:@selector(startScan) userInfo:nil repeats:YES];
+    
 }
 
 /*
@@ -247,10 +274,10 @@
 - (void)centralManager:(CBCentralManager *)central didFailToConnectPeripheral:(CBPeripheral *)aPeripheral error:(NSError *)error
 {
     NSLog(@"Fail to connect to peripheral: %@ with error = %@", aPeripheral, [error localizedDescription]);
-    if( peripheral )
+    if( self.proxima )
     {
-        [peripheral setDelegate:nil];
-        peripheral = nil;
+        [self.proxima setDelegate:nil];
+        self.proxima = nil;
     }
 }
 
@@ -259,13 +286,13 @@
 - (void)sendData {
     // First up, check if we're meant to be sending an EOM
     static BOOL sendingEOM = NO;
-    NSLog(@"status -- %ld",self.peripheral.state);
+    NSLog(@"status -- %ld",self.proxima.state);
   
     
     if (sendingEOM) {
         
         // send it
-       [self.peripheral writeValue:[@"EOM" dataUsingEncoding:NSUTF8StringEncoding] forCharacteristic:transferCharacteristic type:CBCharacteristicWriteWithResponse];
+       [self.proxima writeValue:[@"EOM" dataUsingEncoding:NSUTF8StringEncoding] forCharacteristic:transferCharacteristic type:CBCharacteristicWriteWithResponse];
        
         
             
@@ -309,7 +336,7 @@
         NSData *chunk = [NSData dataWithBytesNoCopy:(char *)[dataToSend bytes] length:amountToSend freeWhenDone:NO];
         
         // Send it
-        [self.peripheral writeValue:chunk forCharacteristic:transferCharacteristic type:CBCharacteristicWriteWithResponse];
+        [self.proxima writeValue:chunk forCharacteristic:transferCharacteristic type:CBCharacteristicWriteWithResponse];
         
         
         // It did send, so update our index
@@ -324,13 +351,14 @@
             sendingEOM = YES;
             sendDataIndex=0;
             // Send it
-            [self.peripheral writeValue:[@"EOM" dataUsingEncoding:NSUTF8StringEncoding] forCharacteristic:transferCharacteristic type:CBCharacteristicWriteWithResponse];
+            [self.proxima writeValue:[@"EOM" dataUsingEncoding:NSUTF8StringEncoding] forCharacteristic:transferCharacteristic type:CBCharacteristicWriteWithResponse];
             
             
                 sendingEOM = NO;
                 
                 NSLog(@"Sent: EOM");
             
+            [manager cancelPeripheralConnection:self.proxima];
             
             return;
         }

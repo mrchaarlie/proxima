@@ -14,7 +14,7 @@
 {
     
     CBCentralManager *manager;   //bluetooth connection manager
-    CBPeripheral *peripheral;   //peripheral = bluetooth device thats been detected
+    CBPeripheral *proxima;   //peripheral = bluetooth device thats been detected
     CBPeripheralManager *peripheralManager;
     NSMutableArray *peripherals; //an array containing all detected peripherals matching Proxima criteria
     NSString *manufacturer; //the manufacturer of the peripheral
@@ -29,12 +29,12 @@
     NSInteger sendDataIndex;
     NSData *dataToSend;
     CBUUID *serviceUUID;
-    
+    NSTimer *rssiTimer;
 }
 
-
+@property (nonatomic,strong) NSTimer *rssiTimer;
 @property (nonatomic,strong) NSTimer *initiateTimer;
-@property (strong)CBPeripheral *peripheral;
+@property (strong)CBPeripheral *proxima;
 @property (nonatomic,strong)  NSMutableArray *peripherals;
 @property (nonatomic,strong) NSString *manufacturer;
 @property (copy) NSString *connected;
