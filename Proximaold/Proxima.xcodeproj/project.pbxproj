@@ -21,6 +21,7 @@
 		BD2DF16B189C7C2000664E47 /* QuartzCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BD2DF16A189C7C2000664E47 /* QuartzCore.framework */; };
 		BD2DF16D189C7C2800664E47 /* IOBluetooth.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BD2DF16C189C7C2800664E47 /* IOBluetooth.framework */; };
 		BDAA5F3018A4B27300B4DAD3 /* screen.png in Resources */ = {isa = PBXBuildFile; fileRef = BDAA5F2F18A4B27300B4DAD3 /* screen.png */; };
+		BDEC27BF18C12F3B008A5991 /* connectAdhoc.sh in Resources */ = {isa = PBXBuildFile; fileRef = BDEC27BE18C12F3B008A5991 /* connectAdhoc.sh */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -56,6 +57,7 @@
 		BD2DF16A189C7C2000664E47 /* QuartzCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QuartzCore.framework; path = System/Library/Frameworks/QuartzCore.framework; sourceTree = SDKROOT; };
 		BD2DF16C189C7C2800664E47 /* IOBluetooth.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = IOBluetooth.framework; path = System/Library/Frameworks/IOBluetooth.framework; sourceTree = SDKROOT; };
 		BDAA5F2F18A4B27300B4DAD3 /* screen.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = screen.png; sourceTree = "<group>"; };
+		BDEC27BE18C12F3B008A5991 /* connectAdhoc.sh */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.sh; path = connectAdhoc.sh; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -137,6 +139,7 @@
 		BD2DF13D189C783400664E47 /* Supporting Files */ = {
 			isa = PBXGroup;
 			children = (
+				BDEC27BE18C12F3B008A5991 /* connectAdhoc.sh */,
 				BDAA5F2F18A4B27300B4DAD3 /* screen.png */,
 				BD2DF13E189C783400664E47 /* Proxima-Info.plist */,
 				BD2DF13F189C783400664E47 /* InfoPlist.strings */,
@@ -246,6 +249,7 @@
 				BD2DF14F189C783400664E47 /* Images.xcassets in Resources */,
 				BD2DF147189C783400664E47 /* Credits.rtf in Resources */,
 				BD2DF14D189C783400664E47 /* MainMenu.xib in Resources */,
+				BDEC27BF18C12F3B008A5991 /* connectAdhoc.sh in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

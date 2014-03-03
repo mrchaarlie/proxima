@@ -18,6 +18,8 @@
 @synthesize connectButton;
 @synthesize initiateTimer;
 
+static NSString * const XXServiceType = @"proxima-service";
+
 - (void)applicationDidFinishLaunching:(NSNotification *)aNotification
 {
     //initially the 'connect' button is disabled because we are going to try to connect automatically first
@@ -56,6 +58,37 @@
     }
 }
 
+
+#pragma mark - Network Protocols
+-(NSString*)runCommand:(NSString*)commandToRun
+{
+    NSTask *task;
+    task = [[NSTask alloc] init];
+    [task setLaunchPath: @"/bin/sh"];
+    
+    NSArray *arguments = [NSArray arrayWithObjects:
+                          @"-c" ,
+                          [NSString stringWithFormat:@"%@", commandToRun],
+                          nil];
+    NSLog(@"run command: %@",commandToRun);
+    [task setArguments: arguments];
+    
+    NSPipe *pipe;
+    pipe = [NSPipe pipe];
+    [task setStandardOutput: pipe];
+    
+    NSFileHandle *file;
+    file = [pipe fileHandleForReading];
+    
+    [task launch];
+    
+    NSData *data;
+    data = [file readDataToEndOfFile];
+    
+    NSString *output;
+    output = [[NSString alloc] initWithData: data encoding: NSUTF8StringEncoding];
+    return output;
+}
 #pragma mark - Start/Stop Scan methods
 
 /*
@@ -133,8 +166,6 @@
     }else{
         [rssiTimer invalidate];
         rssiTimer = nil;
-        [initiateTimer invalidate];
-        initiateTimer =nil;
         [manager cancelPeripheralConnection:self.proxima];
     }
 }
@@ -149,9 +180,12 @@
     //if the peripheral has a name -- My Arduino 71:C6:86 then we are going to connect to it.
     
     //the manager found a device, we will stop and invalidate the timer
+ 
+        NSLog(@"aperiph--%@", aPeripheral.name);
     
     
-    if(aPeripheral && [aPeripheral.name rangeOfString:@"My Arduino" ].location!=NSNotFound && [RSSI intValue] > -42)
+    
+    if(aPeripheral && [aPeripheral.name rangeOfString:@"My Arduino" ].location!=NSNotFound && [RSSI intValue] > -50)
     {
      
         [manager connectPeripheral:aPeripheral options:nil];
@@ -218,16 +252,15 @@
 
     // add some characteristics, also identified by your own custom UUIDs.
 
-    NSData *fooData = [@"foo" dataUsingEncoding:NSUTF8StringEncoding];
-    dataToSend =fooData;
-    
-    NSLog(@"connected -- %@",aPeripheral);
-	self.connected = @"Connected";
     
     self.rssiTimer = [NSTimer scheduledTimerWithTimeInterval:1.0 target:self selector:@selector(checkRssi) userInfo:nil repeats:YES];
     
   }
 
+-(void) checkService
+{
+    [manager scanForPeripheralsWithServices:nil options:nil];
+}
 
 - (void) checkRssi
 {
@@ -237,9 +270,9 @@
 
 - (void)peripheralDidUpdateRSSI:(CBPeripheral *)peripheral error:(NSError *)error
 {
-    NSLog(@"rssi -- %@", peripheral.RSSI);
+//    NSLog(@"rssi -- %@", peripheral.RSSI);
 
-    if([peripheral.RSSI intValue] < -42)
+    if([peripheral.RSSI intValue] < -50)
     {
         [manager cancelPeripheralConnection:self.proxima];
         [self.rssiTimer invalidate];
@@ -263,7 +296,8 @@
         [self.proxima setDelegate:nil];
         self.proxima = nil;
     }
-   
+
+    
      self.initiateTimer=[NSTimer scheduledTimerWithTimeInterval:1.0 target:self selector:@selector(startScan) userInfo:nil repeats:YES];
     
 }
@@ -285,85 +319,54 @@
 #pragma mark - sending files
 - (void)sendData {
     // First up, check if we're meant to be sending an EOM
-    static BOOL sendingEOM = NO;
-    NSLog(@"status -- %ld",self.proxima.state);
-  
     
-    if (sendingEOM) {
-        
-        // send it
-       [self.proxima writeValue:[@"EOM" dataUsingEncoding:NSUTF8StringEncoding] forCharacteristic:transferCharacteristic type:CBCharacteristicWriteWithResponse];
-       
-        
-            
-            // It did, so mark it as sent
-            sendingEOM = NO;
-            
-            NSLog(@"Sent: EOM");
-        
-        
-        // It didn't send, so we'll exit and wait for peripheralManagerIsReadyToUpdateSubscribers to call sendData again
-        return;
-    }
+    [self runCommand:@"networksetup -setairportnetwork en0 Proxima anson "];
     
-    // We're not sending an EOM, so we're sending data
+    [self runScriptToMount];
     
-    // Is there any left to send?
     
-    if (sendDataIndex >= dataToSend.length) {
-        sendDataIndex=0;
-        // No data left.  Do nothing
-        return;
-    }
-    
-    // There's data left, so send until the callback fails, or we're done.
-    
-    while (sendDataIndex<dataToSend.length) {
-        
-        // Make the next chunk
-        
-        // Work out how big it should be
-        NSInteger amountToSend = dataToSend.length - sendDataIndex;
-        
-        // Can't be longer than 20 bytes
-        if (amountToSend > NOTIFY_MTU)
-        {
-            amountToSend = NOTIFY_MTU;
-            
-        }
-        
-        // Copy out the data we want
-        NSData *chunk = [NSData dataWithBytesNoCopy:(char *)[dataToSend bytes] length:amountToSend freeWhenDone:NO];
-        
-        // Send it
-        [self.proxima writeValue:chunk forCharacteristic:transferCharacteristic type:CBCharacteristicWriteWithResponse];
-        
-        
-        // It did send, so update our index
-        sendDataIndex += amountToSend;
-        
-        // Was it the last one?
-        if (sendDataIndex >= dataToSend.length) {
-            
-            // It was - send an EOM
-            
-            // Set this so if the send fails, we'll send it next time
-            sendingEOM = YES;
-            sendDataIndex=0;
-            // Send it
-            [self.proxima writeValue:[@"EOM" dataUsingEncoding:NSUTF8StringEncoding] forCharacteristic:transferCharacteristic type:CBCharacteristicWriteWithResponse];
-            
-            
-                sendingEOM = NO;
-                
-                NSLog(@"Sent: EOM");
-            
-            [manager cancelPeripheralConnection:self.proxima];
-            
-            return;
-        }
-    }}
+}
 
+- (void)runScriptToMount
+{
+    [self runCommand:@"umount -f ~/mount | /opt/local/bin/sshfs Anson@Ansons-MacBook-Air.local:/Proxima ~/mount"];
+    [NSTimer scheduledTimerWithTimeInterval:1.0f target:self selector:@selector(runScriptTocCopy) userInfo:nil repeats:NO];
+}
+
+- (void)runScriptTocCopy
+{
+    [self runCommand:@"mkdir ~/ProximaRecvd | cp ~/mount/sonu.txt ~/ProximaRecvd"];
+}
+- (NSString *)stringToHex:(NSString *)string
+{
+    const char *utf8 = [string UTF8String];
+    NSMutableString *hex = [NSMutableString string];
+    while ( *utf8 ) [hex appendFormat:@"%02X" , *utf8++ & 0x00FF];
+    
+    return [NSString stringWithFormat:@"%@", hex];
+}
+
+- (NSData *)dataFromHexString:(NSString *)string {
+    string = [string lowercaseString];
+    NSMutableData *data= [NSMutableData new];
+    unsigned char whole_byte;
+    char byte_chars[3] = {'\0','\0','\0'};
+    int i = 0;
+    int length = (int)string.length;
+    while (i < length-1) {
+        char c = [string characterAtIndex:i++];
+        if (c < '0' || (c > '9' && c < 'a') || c > 'f')
+            continue;
+        byte_chars[0] = c;
+        byte_chars[1] = [string characterAtIndex:i++];
+        whole_byte = strtol(byte_chars, NULL, 16);
+        [data appendBytes:&whole_byte length:1];
+        
+    }
+    
+    return data;
+    
+}
 
 - (NSData *) PNGRepresentationOfImage:(NSImage *) image {
     // Create a bitmap representation from the current image
@@ -384,7 +387,7 @@
         return ;
     }else{
         NSLog(@"SUCCESS BITCH");
-    }
+   }
 }
 #pragma mark - CBPeripheral delegate methods
 /*
@@ -456,12 +459,15 @@
             }
         }
     }else{
-        NSLog(@"foo");
         for (CBCharacteristic *aChar in service.characteristics)
         {
             if([service.characteristics indexOfObject:aChar]==0)
             {
             transferCharacteristic=(CBMutableCharacteristic*)aChar;
+                
+                [self.proxima setNotifyValue:TRUE forCharacteristic:aChar];
+                
+                [self.proxima readValueForCharacteristic:aChar];
             }
 
         }
@@ -477,6 +483,8 @@
  */
 - (void) peripheral:(CBPeripheral *)aPeripheral didUpdateValueForCharacteristic:(CBCharacteristic *)characteristic error:(NSError *)error
 {
+    NSLog(@"char -- %@",characteristic.UUID);
+    NSLog(@"value -- %@",characteristic.value);
     /* Updated value for heart rate measurement received */
     if ([characteristic.UUID isEqual:[CBUUID UUIDWithString:@"2A37"]])
     {
@@ -506,6 +514,8 @@
     {
         self.manufacturer = [[NSString alloc] initWithData:characteristic.value encoding:NSUTF8StringEncoding] ;
         NSLog(@"Manufacturer Name = %@", self.manufacturer);
+    }
+    else{
     }
 }
 
