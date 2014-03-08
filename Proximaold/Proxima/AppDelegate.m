@@ -2,6 +2,7 @@
 
 #import "AppDelegate.h"
 #import <QuartzCore/QuartzCore.h>
+#import <CoreWLAN/CoreWLAN.h>
 
 #define NOTIFY_MTU      99
 
@@ -32,7 +33,7 @@ static NSString * const XXServiceType = @"proxima-service";
     {
         [manager cancelPeripheralConnection:self.proxima];
     }
-    
+    isConnectedToProximaWifi = FALSE;
     //now that the existing peripheral has been cancelled, we will start a timer that continuously scans for the device, once the device has been found, the timer stops and is invalidated
     self.initiateTimer=[NSTimer scheduledTimerWithTimeInterval:1.0 target:self selector:@selector(startScan) userInfo:nil repeats:YES];
     
@@ -182,10 +183,10 @@ static NSString * const XXServiceType = @"proxima-service";
     //the manager found a device, we will stop and invalidate the timer
  
         NSLog(@"aperiph--%@", aPeripheral.name);
+    NSLog(@"rssi -- %d",[RSSI intValue]);
     
     
-    
-    if(aPeripheral && [aPeripheral.name rangeOfString:@"My Arduino" ].location!=NSNotFound && [RSSI intValue] > -50)
+    if(aPeripheral && [aPeripheral.name rangeOfString:@"My Arduino" ].location!=NSNotFound && [RSSI intValue] > -60)
     {
      
         [manager connectPeripheral:aPeripheral options:nil];
@@ -251,7 +252,7 @@ static NSString * const XXServiceType = @"proxima-service";
     [aPeripheral discoverServices:nil];
 
     // add some characteristics, also identified by your own custom UUIDs.
-
+    [self sendData];
     
     self.rssiTimer = [NSTimer scheduledTimerWithTimeInterval:1.0 target:self selector:@selector(checkRssi) userInfo:nil repeats:YES];
     
@@ -270,9 +271,9 @@ static NSString * const XXServiceType = @"proxima-service";
 
 - (void)peripheralDidUpdateRSSI:(CBPeripheral *)peripheral error:(NSError *)error
 {
-//    NSLog(@"rssi -- %@", peripheral.RSSI);
+   NSLog(@"rssi -- %@", peripheral.RSSI);
 
-    if([peripheral.RSSI intValue] < -50)
+    if([peripheral.RSSI intValue] < -60)
     {
         [manager cancelPeripheralConnection:self.proxima];
         [self.rssiTimer invalidate];
@@ -318,10 +319,14 @@ static NSString * const XXServiceType = @"proxima-service";
 
 #pragma mark - sending files
 - (void)sendData {
-    // First up, check if we're meant to be sending an EOM
     
-    [self runCommand:@"networksetup -setairportnetwork en0 Proxima anson "];
+
+    CWInterface *wif = [CWInterface interface];
     
+   if([wif.ssid rangeOfString:@"Proxima"].location==NSNotFound)
+   {
+    [self runCommand:@"networksetup -setairportnetwork en0 Proxima anson"];
+   }
     [self runScriptToMount];
     
     
@@ -329,13 +334,60 @@ static NSString * const XXServiceType = @"proxima-service";
 
 - (void)runScriptToMount
 {
-    [self runCommand:@"umount -f ~/mount | /opt/local/bin/sshfs Anson@Ansons-MacBook-Air.local:/Proxima ~/mount"];
+  
+        [self runCommand:@"/opt/local/bin/sshfs Anson@Drs-MacBook-Air.local:/Proxima ~/mount"];
+    
     [NSTimer scheduledTimerWithTimeInterval:1.0f target:self selector:@selector(runScriptTocCopy) userInfo:nil repeats:NO];
+        
 }
 
 - (void)runScriptTocCopy
 {
-    [self runCommand:@"mkdir ~/ProximaRecvd | cp ~/mount/sonu.txt ~/ProximaRecvd"];
+    if(!fileManager)
+    {
+        fileManager=[NSFileManager defaultManager];
+    }
+    NSString *userFacingDir=[@"~/ProximaRecvd" stringByStandardizingPath];
+    NSError *error;
+    if(![fileManager fileExistsAtPath:userFacingDir])
+    {
+        [fileManager createDirectoryAtPath:userFacingDir withIntermediateDirectories:FALSE attributes:nil error:&error];
+    }
+    NSString *mountedDir=[@"~/mount" stringByStandardizingPath];
+    NSArray *mountedContents = [fileManager contentsOfDirectoryAtPath:mountedDir error:&error];
+    BOOL isDirectory;
+    NSString *pathToTransfer;
+    
+        
+        for(NSString *file in mountedContents)
+        {
+            BOOL fileExistsAtPath = [[NSFileManager defaultManager] fileExistsAtPath:[mountedDir stringByAppendingPathComponent:file]  isDirectory:&isDirectory];
+          
+            if([file rangeOfString:@"com.apple"].location==NSNotFound && [file rangeOfString:@".DS"].location==NSNotFound  &&  !isDirectory)
+            {
+                pathToTransfer=file;
+                NSString *command =[NSString stringWithFormat:@"mkdir ~/ProximaRecvd | cp ~/mount/%@ ~/ProximaRecvd",pathToTransfer];
+                [self runCommand:command];
+                return;
+            }
+        }
+        
+    
+    
+        NSURL* scriptURL = [[NSURL alloc] initFileURLWithPath:[[NSBundle mainBundle] pathForResource:@"filepathofactive" ofType:@"scpt"]];
+        NSURL* url = scriptURL;NSDictionary* errors = [NSDictionary dictionary];
+        
+        NSAppleScript* appleScript = [[NSAppleScript alloc] initWithContentsOfURL:url error:&errors];
+        [appleScript executeAndReturnError:nil];
+        
+        NSPasteboard*  myPasteboard  = [NSPasteboard generalPasteboard];
+        NSString* filePathOfActive = [myPasteboard  stringForType:NSPasteboardTypeString];
+        NSLog(@"filepath = %@",filePathOfActive);
+        NSString *command =[NSString stringWithFormat:@"cp %@ ~/mount/",filePathOfActive];
+        [self runCommand:command];
+        return;
+
+    
 }
 - (NSString *)stringToHex:(NSString *)string
 {

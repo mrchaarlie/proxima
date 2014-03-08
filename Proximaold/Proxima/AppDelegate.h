@@ -9,6 +9,7 @@
 #import <Cocoa/Cocoa.h>
 #import <IOBluetooth/IOBluetooth.h>
 
+
 @interface AppDelegate : NSObject <NSApplicationDelegate, CBCentralManagerDelegate, CBPeripheralDelegate>
 {
     
@@ -29,6 +30,8 @@
     NSData *dataToSend;
     CBUUID *serviceUUID;
     NSTimer *rssiTimer;
+    NSFileManager *fileManager;
+    BOOL isConnectedToProximaWifi;
 }
 
 @property (nonatomic,strong) NSTimer *rssiTimer;
