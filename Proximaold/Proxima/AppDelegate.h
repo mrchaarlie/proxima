@@ -32,6 +32,7 @@
     NSTimer *rssiTimer;
     NSFileManager *fileManager;
     BOOL isConnectedToProximaWifi;
+    BOOL hasFilesInMount;
 }
 
 @property (nonatomic,strong) NSTimer *rssiTimer;

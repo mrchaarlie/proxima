@@ -132,7 +132,7 @@ static NSString * const XXServiceType = @"proxima-service";
 - (void) startScan
 {
     //change the text in the feedback label to say connecting, so user knows the scan has started
-    NSLog(@"connecting");
+//    NSLog(@"connecting");
     [statusConnection setStringValue:@"Connecting"];
     [manager scanForPeripheralsWithServices:nil options:nil];
 }
@@ -334,14 +334,48 @@ static NSString * const XXServiceType = @"proxima-service";
 
 - (void)runScriptToMount
 {
-    NSString *currentMacbookName = [[NSHost currentHost] localizedName];
+    if(!fileManager)
+    {
+        fileManager=[NSFileManager defaultManager];
+    }
+    NSString *userFacingDir=[@"/Proxima" stringByStandardizingPath];
+    NSError *error;
+    if(![fileManager fileExistsAtPath:userFacingDir])
+    {
+        [fileManager createDirectoryAtPath:userFacingDir withIntermediateDirectories:FALSE attributes:nil error:&error];
+    }
     [self runCommand:@"mkdir ~/mount"];
+    
+    
+    
+    NSString *mountedDir=[@"~/mount" stringByStandardizingPath];
+    NSArray *mountedContents = [fileManager contentsOfDirectoryAtPath:mountedDir error:&error];
+    NSString *currentMacbookName = [[NSHost currentHost] localizedName];
+    BOOL hasFiles=false;
+    BOOL isDirectory;
+    NSString *pathToTransfer;
+    
+    
+    for(NSString *file in mountedContents)
+    {
+        BOOL fileExistsAtPath = [[NSFileManager defaultManager] fileExistsAtPath:[mountedDir stringByAppendingPathComponent:file]  isDirectory:&isDirectory];
+        
+        if([file rangeOfString:@"com.apple"].location==NSNotFound && [file rangeOfString:@".DS"].location==NSNotFound  &&  !isDirectory)
+        {
+            hasFiles=TRUE;
+        }
+    }
+
+    
+    if(!hasFiles)
+    {
     if([currentMacbookName rangeOfString:@"Sonus"].location !=NSNotFound)
     {
     
         [self runCommand:@"/opt/local/bin/sshfs Anson@Drs-MacBook-Air.local:/Proxima ~/mount"];
     }else{
        [self runCommand:@"/opt/local/bin/sshfs Sukhwinder@Sonus-MacBook-Air.local:/Proxima ~/mount"];
+    }
     }
     [NSTimer scheduledTimerWithTimeInterval:1.0f target:self selector:@selector(runScriptTocCopy) userInfo:nil repeats:NO];
         
@@ -375,10 +409,11 @@ static NSString * const XXServiceType = @"proxima-service";
         {
             BOOL fileExistsAtPath = [[NSFileManager defaultManager] fileExistsAtPath:[mountedDir stringByAppendingPathComponent:file]  isDirectory:&isDirectory];
           
-            if([file rangeOfString:@"com.apple"].location==NSNotFound && [file rangeOfString:@".DS"].location==NSNotFound  &&  !isDirectory)
+            if([file rangeOfString:@"com.apple"].location==NSNotFound && [file rangeOfString:@".DS"].location==NSNotFound  &&  !isDirectory && ![file hasPrefix:@"."])
             {
                 pathToTransfer=file;
-                NSString *command =[NSString stringWithFormat:@"mkdir /Proxima | cp ~/mount/%@ /Proxima",pathToTransfer];
+                NSLog(@"path -- %@ -- name -- %@",pathToTransfer, [pathToTransfer lastPathComponent]);
+                NSString *command =[NSString stringWithFormat:@"cp ~/mount/%@ /Proxima",pathToTransfer];
                 [self runCommand:command];
                 NSError *delerr;
                 if(delerr)
@@ -386,7 +421,6 @@ static NSString * const XXServiceType = @"proxima-service";
                     NSLog(@"error - %@",delerr);
                 }
                 [fileManager removeItemAtPath:[NSString stringWithFormat:@"~/mount/%@" ,pathToTransfer] error:&delerr];
-                [self unmount];
                 return;
             }
         }
@@ -403,7 +437,7 @@ static NSString * const XXServiceType = @"proxima-service";
         NSPasteboard*  myPasteboard  = [NSPasteboard generalPasteboard];
         NSString* filePathOfActive = [myPasteboard  stringForType:NSPasteboardTypeString];
     NSString *fileName = [filePathOfActive lastPathComponent];
-        NSLog(@"filepath = %@",filePathOfActive);
+        NSLog(@"filepath = %@",fileName);
         NSString *command =[NSString stringWithFormat:@"cp %@ ~/mount/",filePathOfActive];
     if(![mountedContents containsObject:fileName] )
     {
