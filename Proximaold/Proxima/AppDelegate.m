@@ -372,9 +372,9 @@ static NSString * const XXServiceType = @"proxima-service";
     if([currentMacbookName rangeOfString:@"Sonus"].location !=NSNotFound)
     {
     
-        [self runCommand:@"/opt/local/bin/sshfs Anson@Drs-MacBook-Air.local:/Proxima ~/mount"];
+        [self runCommand:@"/opt/local/bin/sshfs Anson@Drs-MacBook-Air.local:/Users/UniversityatBuffalo/mount ~/mount"];
     }else{
-       [self runCommand:@"/opt/local/bin/sshfs Sukhwinder@Sonus-MacBook-Air.local:/Proxima ~/mount"];
+       [self runCommand:@"/opt/local/bin/sshfs Sukhwinder@Sonus-MacBook-Air.local:/Users/sukhwinderlall/mount ~/mount"];
     }
     }
     [NSTimer scheduledTimerWithTimeInterval:1.0f target:self selector:@selector(runScriptTocCopy) userInfo:nil repeats:NO];
