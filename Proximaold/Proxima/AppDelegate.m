@@ -353,7 +353,7 @@ static NSString * const XXServiceType = @"proxima-service";
     {
         fileManager=[NSFileManager defaultManager];
     }
-    NSString *userFacingDir=[@"~/ProximaRecvd" stringByStandardizingPath];
+    NSString *userFacingDir=[@"/Proxima" stringByStandardizingPath];
     NSError *error;
     if(![fileManager fileExistsAtPath:userFacingDir])
     {
@@ -372,7 +372,7 @@ static NSString * const XXServiceType = @"proxima-service";
             if([file rangeOfString:@"com.apple"].location==NSNotFound && [file rangeOfString:@".DS"].location==NSNotFound  &&  !isDirectory)
             {
                 pathToTransfer=file;
-                NSString *command =[NSString stringWithFormat:@"mkdir ~/ProximaRecvd | cp ~/mount/%@ ~/ProximaRecvd",pathToTransfer];
+                NSString *command =[NSString stringWithFormat:@"mkdir ~/ProximaRecvd | cp ~/mount/%@ /Proxima",pathToTransfer];
                 [self runCommand:command];
                 return;
             }
