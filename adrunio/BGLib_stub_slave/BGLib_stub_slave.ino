@@ -79,7 +79,10 @@ BGLib ble112((HardwareSerial *)&bleSerialPort, 0, 1);
 
 #define BGAPI_GET_RESPONSE(v, dType) dType *v = (dType *)ble112.getLastRXPayload()
 
+const int buttonPin = 2;     // the number of the pushbutton pin
+const int ledPin =  4;      // the number of the LED pin
 
+int buttonState = 0;         // variable for reading the pushbutton status
 
 // ================================================================
 // ARDUINO APPLICATION SETUP AND LOOP FUNCTIONS
@@ -120,7 +123,27 @@ void setup() {
 
 // main application loop
 void loop() {
-    // keep polling for new data from BLE
+  delay(1);     
+    //  - solid = STANDBY
+    //  - 1 pulse per second = ADVERTISING
+    //  - 2 pulses per second = CONNECTED_SLAVE
+    //  - 3 pulses per second = CONNECTED_SLAVE with encryption
+    uint16_t slice = millis() % 1000;
+    if (ble_state == BLE_STATE_STANDBY) {
+        digitalWrite(LED_PIN, HIGH);
+    } else if (ble_state == BLE_STATE_ADVERTISING) {
+        digitalWrite(LED_PIN, slice < 100);
+    } else if (ble_state == BLE_STATE_CONNECTED_SLAVE) {
+        if (!ble_encrypted) {
+            digitalWrite(LED_PIN, slice < 100 || (slice > 200 && slice < 300));
+        } else {
+            digitalWrite(LED_PIN, slice < 100 || (slice > 200 && slice < 300) || (slice > 400 && slice < 500));
+        }
+    }
+}
+
+void bluetooth(){
+      // keep polling for new data from BLE
     ble112.checkActivity();
   
       delay(1);     
@@ -283,6 +306,7 @@ void my_ble_evt_connection_status(const ble_msg_connection_status_evt_t *msg) {
         Serial.println(" }");
     #endif
 
+   
     // "flags" bit description:
     //  - bit 0: connection_connected
     //           Indicates the connection exists to a remote device.

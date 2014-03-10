@@ -28,6 +28,7 @@ static NSString * const XXServiceType = @"proxima-service";
     
     manager = [[CBCentralManager alloc] initWithDelegate:self queue:nil];
     
+    [self unmount];
     //if there is a current peripheral connected, we are going to disconnect it and then try to reconnect , for now we are just doing this to ensure that every time we run the app its a new connection, nothing funny going on
     if(self.proxima)
     {
@@ -335,7 +336,7 @@ static NSString * const XXServiceType = @"proxima-service";
 - (void)runScriptToMount
 {
     NSString *currentMacbookName = [[NSHost currentHost] localizedName];
-    
+    [self runCommand:@"mkdir ~/mount"];
     if([currentMacbookName rangeOfString:@"Sonus"].location !=NSNotFound)
     {
     
@@ -345,6 +346,11 @@ static NSString * const XXServiceType = @"proxima-service";
     }
     [NSTimer scheduledTimerWithTimeInterval:1.0f target:self selector:@selector(runScriptTocCopy) userInfo:nil repeats:NO];
         
+}
+
+-(void)unmount
+{
+    [self runCommand:@"umount -f ~/mount"];
 }
 
 - (void)runScriptTocCopy
@@ -359,6 +365,8 @@ static NSString * const XXServiceType = @"proxima-service";
     {
         [fileManager createDirectoryAtPath:userFacingDir withIntermediateDirectories:FALSE attributes:nil error:&error];
     }
+    [self runCommand:@"mkdir ~/mount"];
+    
     NSString *mountedDir=[@"~/mount" stringByStandardizingPath];
     NSArray *mountedContents = [fileManager contentsOfDirectoryAtPath:mountedDir error:&error];
     BOOL isDirectory;
@@ -372,8 +380,15 @@ static NSString * const XXServiceType = @"proxima-service";
             if([file rangeOfString:@"com.apple"].location==NSNotFound && [file rangeOfString:@".DS"].location==NSNotFound  &&  !isDirectory)
             {
                 pathToTransfer=file;
-                NSString *command =[NSString stringWithFormat:@"mkdir ~/ProximaRecvd | cp ~/mount/%@ /Proxima",pathToTransfer];
+                NSString *command =[NSString stringWithFormat:@"mkdir /Proxima | cp ~/mount/%@ /Proxima",pathToTransfer];
                 [self runCommand:command];
+                NSError *delerr;
+                if(delerr)
+                {
+                    NSLog(@"error - %@",delerr);
+                }
+                [fileManager removeItemAtPath:[NSString stringWithFormat:@"~/mount/%@" ,pathToTransfer] error:&delerr];
+                [self unmount];
                 return;
             }
         }
@@ -385,12 +400,14 @@ static NSString * const XXServiceType = @"proxima-service";
         
         NSAppleScript* appleScript = [[NSAppleScript alloc] initWithContentsOfURL:url error:&errors];
         [appleScript executeAndReturnError:nil];
-        
+    [self runCommand:@"mkdir ~/mount"];
+    
         NSPasteboard*  myPasteboard  = [NSPasteboard generalPasteboard];
         NSString* filePathOfActive = [myPasteboard  stringForType:NSPasteboardTypeString];
         NSLog(@"filepath = %@",filePathOfActive);
         NSString *command =[NSString stringWithFormat:@"cp %@ ~/mount/",filePathOfActive];
         [self runCommand:command];
+        [self unmount];
         return;
 
     
