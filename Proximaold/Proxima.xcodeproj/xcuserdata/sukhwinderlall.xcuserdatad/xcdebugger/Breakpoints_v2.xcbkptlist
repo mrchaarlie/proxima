@@ -20,11 +20,11 @@
             ignoreCount = "0"
             continueAfterRunningActions = "No"
             filePath = "Proxima/AppDelegate.m"
-            timestampString = "415927550.132637"
+            timestampString = "416115524.996719"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "232"
-            endingLineNumber = "232"
+            startingLineNumber = "231"
+            endingLineNumber = "231"
             landmarkName = "-centralManager:didRetrievePeripherals:"
             landmarkType = "5">
          </BreakpointContent>

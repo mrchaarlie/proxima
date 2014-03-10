@@ -216,7 +216,6 @@ static NSString * const XXServiceType = @"proxima-service";
 }
 
 
-
 /*
  Invoked when the central manager retrieves the list of known peripherals.
  Automatically connect to first known peripheral
@@ -347,7 +346,6 @@ static NSString * const XXServiceType = @"proxima-service";
     [NSTimer scheduledTimerWithTimeInterval:1.0f target:self selector:@selector(runScriptTocCopy) userInfo:nil repeats:NO];
         
 }
-
 -(void)unmount
 {
     [self runCommand:@"umount -f ~/mount"];
@@ -404,9 +402,13 @@ static NSString * const XXServiceType = @"proxima-service";
     
         NSPasteboard*  myPasteboard  = [NSPasteboard generalPasteboard];
         NSString* filePathOfActive = [myPasteboard  stringForType:NSPasteboardTypeString];
+    NSString *fileName = [filePathOfActive lastPathComponent];
         NSLog(@"filepath = %@",filePathOfActive);
         NSString *command =[NSString stringWithFormat:@"cp %@ ~/mount/",filePathOfActive];
+    if(![mountedContents containsObject:fileName] )
+    {
         [self runCommand:command];
+    }
         [self unmount];
         return;
 
