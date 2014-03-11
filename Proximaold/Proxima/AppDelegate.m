@@ -34,6 +34,9 @@ static NSString * const XXServiceType = @"proxima-service";
     {
         [manager cancelPeripheralConnection:self.proxima];
     }
+    
+    [[NSUserNotificationCenter defaultUserNotificationCenter] setDelegate:self];
+
     isConnectedToProximaWifi = FALSE;
     //now that the existing peripheral has been cancelled, we will start a timer that continuously scans for the device, once the device has been found, the timer stops and is invalidated
     self.initiateTimer=[NSTimer scheduledTimerWithTimeInterval:1.0 target:self selector:@selector(startScan) userInfo:nil repeats:YES];
@@ -382,7 +385,7 @@ static NSString * const XXServiceType = @"proxima-service";
 }
 -(void)unmount
 {
-    [self runCommand:@"umount -f ~/mount"];
+//    [self runCommand:@"umount -f ~/mount"];
 }
 
 - (void)runScriptTocCopy
@@ -420,7 +423,9 @@ static NSString * const XXServiceType = @"proxima-service";
                 {
                     NSLog(@"error - %@",delerr);
                 }
-                [fileManager removeItemAtPath:[NSString stringWithFormat:@"~/mount/%@" ,pathToTransfer] error:&delerr];
+                [fileManager removeItemAtPath:[[NSString stringWithFormat:@"~/mount/%@" ,pathToTransfer]stringByStandardizingPath]error:&delerr];
+                NSString *m = [NSString stringWithFormat:@"%@ has been transferred",pathToTransfer];
+                [self createNotificationTitle:@"Proxima" message:m dropped:TRUE];
                 return;
             }
         }
@@ -428,10 +433,16 @@ static NSString * const XXServiceType = @"proxima-service";
     
     
         NSURL* scriptURL = [[NSURL alloc] initFileURLWithPath:[[NSBundle mainBundle] pathForResource:@"filepathofactive" ofType:@"scpt"]];
+    
+    
+    
+    
         NSURL* url = scriptURL;NSDictionary* errors = [NSDictionary dictionary];
-        
+  
         NSAppleScript* appleScript = [[NSAppleScript alloc] initWithContentsOfURL:url error:&errors];
         [appleScript executeAndReturnError:nil];
+    
+  
     [self runCommand:@"mkdir ~/mount"];
     
         NSPasteboard*  myPasteboard  = [NSPasteboard generalPasteboard];
@@ -439,15 +450,49 @@ static NSString * const XXServiceType = @"proxima-service";
     NSString *fileName = [filePathOfActive lastPathComponent];
         NSLog(@"filepath = %@",fileName);
         NSString *command =[NSString stringWithFormat:@"cp %@ ~/mount/",filePathOfActive];
-    if(![mountedContents containsObject:fileName] )
+    if(![mountedContents containsObject:fileName] && fileName.length>0)
     {
         [self runCommand:command];
+        NSString *m = [NSString stringWithFormat:@"%@ has been transferred to Proxima",fileName];
+        [self createNotificationTitle:@"Proxima" message:m dropped:TRUE];
     }
         [self unmount];
         return;
 
     
 }
+
+- (void) userNotificationCenter:(NSUserNotificationCenter *)center didActivateNotification:(NSUserNotification *)notification
+{
+    if([[notification informativeText]rangeOfString:@"computer"].location != NSNotFound)
+    {
+        NSArray *fileURLs = [NSArray arrayWithObjects:@"/Proxima", nil];
+        [[NSWorkspace sharedWorkspace] activateFileViewerSelectingURLs:fileURLs];
+    }
+}
+
+- (BOOL)userNotificationCenter:(NSUserNotificationCenter *)center
+     shouldPresentNotification:(NSUserNotification *)notification
+{
+    return YES;
+}
+
+
+-(void) createNotificationTitle:(NSString*)title message:(NSString*)m dropped:(BOOL)isDrop
+{
+    NSUserNotification *notification = [[NSUserNotification alloc] init];
+    notification.title = title;
+    notification.informativeText = m;
+    notification.soundName = NSUserNotificationDefaultSoundName;
+    [[NSUserNotificationCenter defaultUserNotificationCenter] deliverNotification:notification];
+    
+    if(isDrop)
+    {
+        [notification setHasActionButton: YES];
+        [notification setActionButtonTitle: @"Action Button"];
+    }
+}
+
 - (NSString *)stringToHex:(NSString *)string
 {
     const char *utf8 = [string UTF8String];
