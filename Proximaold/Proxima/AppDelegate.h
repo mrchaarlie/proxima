@@ -33,6 +33,7 @@
     NSFileManager *fileManager;
     BOOL isConnectedToProximaWifi;
     BOOL hasFilesInMount;
+    NSString *fullFilePath;
 }
 
 @property (nonatomic,strong) NSTimer *rssiTimer;

@@ -424,7 +424,8 @@ static NSString * const XXServiceType = @"proxima-service";
                     NSLog(@"error - %@",delerr);
                 }
                 [fileManager removeItemAtPath:[[NSString stringWithFormat:@"~/mount/%@" ,pathToTransfer]stringByStandardizingPath]error:&delerr];
-                NSString *m = [NSString stringWithFormat:@"%@ has been transferred",pathToTransfer];
+                NSString *m = [NSString stringWithFormat:@"%@ has been transferred. Click to view",pathToTransfer];
+                fullFilePath =[NSString stringWithFormat:@"/Proxima/%@",pathToTransfer];
                 [self createNotificationTitle:@"Proxima" message:m dropped:TRUE];
                 return;
             }
@@ -464,9 +465,10 @@ static NSString * const XXServiceType = @"proxima-service";
 
 - (void) userNotificationCenter:(NSUserNotificationCenter *)center didActivateNotification:(NSUserNotification *)notification
 {
-    if([[notification informativeText]rangeOfString:@"computer"].location != NSNotFound)
+    if([[notification informativeText]rangeOfString:@"Click"].location != NSNotFound)
     {
-        NSArray *fileURLs = [NSArray arrayWithObjects:@"/Proxima", nil];
+        NSLog(@"filepath - %@",fullFilePath)
+        ;        NSArray *fileURLs = [NSArray arrayWithObjects:fullFilePath, nil];
         [[NSWorkspace sharedWorkspace] activateFileViewerSelectingURLs:fileURLs];
     }
 }
