@@ -302,7 +302,8 @@ static NSString * const XXServiceType = @"proxima-service";
     }
 
     
-     self.initiateTimer=[NSTimer scheduledTimerWithTimeInterval:1.0 target:self selector:@selector(startScan) userInfo:nil repeats:YES];
+    [self startScan];
+    self.rssiTimer = [NSTimer scheduledTimerWithTimeInterval:1.0 target:self selector:@selector(checkRssi) userInfo:nil repeats:YES];
     
 }
 
