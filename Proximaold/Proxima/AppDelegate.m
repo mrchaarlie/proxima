@@ -326,7 +326,7 @@ static NSString * const XXServiceType = @"proxima-service";
    {
     [self runCommand:@"networksetup -setairportnetwork en0 Proxima anson"];
    }
-    [self runScriptToMount];
+    [self runScriptTocCopy];
     
     
 }
@@ -368,6 +368,7 @@ static NSString * const XXServiceType = @"proxima-service";
     
     if(!hasFiles)
     {
+        
     if([currentMacbookName rangeOfString:@"Sonus"].location !=NSNotFound)
     {
     
@@ -411,8 +412,19 @@ static NSString * const XXServiceType = @"proxima-service";
             {
                 pathToTransfer=file;
                 NSLog(@"path -- %@ -- name -- %@",pathToTransfer, [pathToTransfer lastPathComponent]);
-                NSString *command =[NSString stringWithFormat:@"cp ~/mount/%@ /Proxima",pathToTransfer];
-                [self runCommand:command];
+                NSString *currentMacbookName = [[NSHost currentHost] localizedName];
+
+                if([currentMacbookName rangeOfString:@"Sonus"].location !=NSNotFound)
+                {
+                    NSString *thisCommand = [NSString stringWithFormat:@"rsync -avz -e ssh ~/mount/%@ Anson@Drs-MacBook-Air.local/Proxima",pathToTransfer];
+                    
+                    [self runCommand:thisCommand];
+                }else{
+                    NSString *thisCommand = [NSString stringWithFormat:@"rsync -avz -e ssh ~/mount/%@ Sukhwinder@Sonus-MacBook-Air.local:/Proxima",pathToTransfer];
+                    
+                    [self runCommand:thisCommand];
+                }
+                
                 NSError *delerr;
                 if(delerr)
                 {
