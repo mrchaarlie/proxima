@@ -190,7 +190,7 @@ static NSString * const XXServiceType = @"proxima-service";
     NSLog(@"rssi -- %d",[RSSI intValue]);
     
     
-    if(aPeripheral && [aPeripheral.name rangeOfString:@"My Arduino" ].location!=NSNotFound && [RSSI intValue] > -60)
+    if(aPeripheral && [aPeripheral.name rangeOfString:@"My Arduino" ].location!=NSNotFound && [RSSI intValue] > -50)
     {
      
         [manager connectPeripheral:aPeripheral options:nil];
@@ -276,7 +276,7 @@ static NSString * const XXServiceType = @"proxima-service";
 {
    NSLog(@"rssi -- %@", peripheral.RSSI);
 
-    if([peripheral.RSSI intValue] < -60)
+    if([peripheral.RSSI intValue] < -50)
     {
         [manager cancelPeripheralConnection:self.proxima];
         [self.rssiTimer invalidate];
@@ -348,7 +348,7 @@ static NSString * const XXServiceType = @"proxima-service";
     {
         [fileManager createDirectoryAtPath:userFacingDir withIntermediateDirectories:FALSE attributes:nil error:&error];
     }
-    [self runCommand:@"mkdir ~/mount"];
+  
     
     
     
@@ -401,7 +401,6 @@ static NSString * const XXServiceType = @"proxima-service";
     {
         [fileManager createDirectoryAtPath:userFacingDir withIntermediateDirectories:FALSE attributes:nil error:&error];
     }
-    [self runCommand:@"mkdir ~/mount"];
     
     NSString *mountedDir=[@"~/mount" stringByStandardizingPath];
     NSArray *mountedContents = [fileManager contentsOfDirectoryAtPath:mountedDir error:&error];
@@ -445,7 +444,6 @@ static NSString * const XXServiceType = @"proxima-service";
         [appleScript executeAndReturnError:nil];
     
   
-    [self runCommand:@"mkdir ~/mount"];
     
         NSPasteboard*  myPasteboard  = [NSPasteboard generalPasteboard];
         NSString* filePathOfActive = [myPasteboard  stringForType:NSPasteboardTypeString];
