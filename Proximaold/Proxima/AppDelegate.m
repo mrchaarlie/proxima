@@ -468,7 +468,7 @@ static NSString * const XXServiceType = @"proxima-service";
     if([[notification informativeText]rangeOfString:@"Click"].location != NSNotFound)
     {
         NSLog(@"filepath - %@",fullFilePath)
-        ;        NSArray *fileURLs = [NSArray arrayWithObjects:fullFilePath, nil];
+        ;        NSArray *fileURLs = [NSArray arrayWithObjects:[NSURL fileURLWithPath:fullFilePath ], nil];
         [[NSWorkspace sharedWorkspace] activateFileViewerSelectingURLs:fileURLs];
     }
 }
