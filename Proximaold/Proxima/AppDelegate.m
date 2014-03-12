@@ -256,8 +256,7 @@ static NSString * const XXServiceType = @"proxima-service";
 
     // add some characteristics, also identified by your own custom UUIDs.
     [self sendData];
-    
-    self.rssiTimer = [NSTimer scheduledTimerWithTimeInterval:1.0 target:self selector:@selector(checkRssi) userInfo:nil repeats:YES];
+
     
   }
 
@@ -300,11 +299,7 @@ static NSString * const XXServiceType = @"proxima-service";
         [self.proxima setDelegate:nil];
         self.proxima = nil;
     }
-
-    
     [self startScan];
-    self.rssiTimer = [NSTimer scheduledTimerWithTimeInterval:1.0 target:self selector:@selector(checkRssi) userInfo:nil repeats:YES];
-    
 }
 
 /*
@@ -427,6 +422,13 @@ static NSString * const XXServiceType = @"proxima-service";
                 NSString *m = [NSString stringWithFormat:@"%@ has been transferred. Click to view",pathToTransfer];
                 fullFilePath =[NSString stringWithFormat:@"/Proxima/%@",pathToTransfer];
                 [self createNotificationTitle:@"Proxima" message:m dropped:TRUE];
+                
+                
+                [self.rssiTimer invalidate];
+                self.rssiTimer = nil;
+                
+                self.rssiTimer = [NSTimer scheduledTimerWithTimeInterval:1.0 target:self selector:@selector(checkRssi) userInfo:nil repeats:YES];
+                
                 return;
             }
         }
@@ -457,6 +459,13 @@ static NSString * const XXServiceType = @"proxima-service";
         [self createNotificationTitle:@"Proxima" message:m dropped:TRUE];
     }
         [self unmount];
+    
+    
+    [self.rssiTimer invalidate];
+    self.rssiTimer = nil;
+    
+    self.rssiTimer = [NSTimer scheduledTimerWithTimeInterval:1.0 target:self selector:@selector(checkRssi) userInfo:nil repeats:YES];
+    
         return;
 
     
