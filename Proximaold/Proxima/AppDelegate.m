@@ -214,7 +214,7 @@ static NSString * const XXServiceType = @"proxima-service";
     NSLog(@"counter -- %d",counter);
     
     
-    if(aPeripheral && [aPeripheral.name rangeOfString:@"My Arduino" ].location!=NSNotFound && [RSSI intValue] > -45 && (!(counter < 5) ||(counter == 0) ))
+    if(aPeripheral && [aPeripheral.name rangeOfString:@"My Arduino" ].location!=NSNotFound && [RSSI intValue] > -45  )
     {
         counter=0;
         
