@@ -34,6 +34,7 @@
     BOOL isConnectedToProximaWifi;
     BOOL hasFilesInMount;
     NSString *fullFilePath;
+    int counter;
 }
 
 @property (nonatomic,strong) NSTimer *rssiTimer;

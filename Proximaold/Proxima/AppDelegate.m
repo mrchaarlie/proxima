@@ -24,6 +24,7 @@ static NSString * const XXServiceType = @"proxima-service";
 - (void)applicationDidFinishLaunching:(NSNotification *)aNotification
 {
     //initially the 'connect' button is disabled because we are going to try to connect automatically first
+    counter=5;
     [connectButton setEnabled:FALSE];
     
     manager = [[CBCentralManager alloc] initWithDelegate:self queue:nil];
@@ -32,7 +33,18 @@ static NSString * const XXServiceType = @"proxima-service";
     //if there is a current peripheral connected, we are going to disconnect it and then try to reconnect , for now we are just doing this to ensure that every time we run the app its a new connection, nothing funny going on
     if(self.proxima)
     {
-        [manager cancelPeripheralConnection:self.proxima];
+        NSLog(@"DISCONNECTED DISCONNECTED");
+        counter=0;
+        
+        [statusConnection setStringValue:@"Disconnected"];
+        [connectButton setTitle:@"Connect"];
+        if( self.proxima)
+        {
+            [self.proxima setDelegate:nil];
+            self.proxima = nil;
+        }
+        [self startScan];
+
     }
     
     [[NSUserNotificationCenter defaultUserNotificationCenter] setDelegate:self];
@@ -59,7 +71,18 @@ static NSString * const XXServiceType = @"proxima-service";
     //cancel current peripherals when we close the app
     if(self.proxima)
     {
-        [manager cancelPeripheralConnection:self.proxima];
+        NSLog(@"DISCONNECTED DISCONNECTED");
+        counter=0;
+        
+        [statusConnection setStringValue:@"Disconnected"];
+        [connectButton setTitle:@"Connect"];
+        if( self.proxima)
+        {
+            [self.proxima setDelegate:nil];
+            self.proxima = nil;
+        }
+        [self startScan];
+
     }
 }
 
@@ -188,12 +211,26 @@ static NSString * const XXServiceType = @"proxima-service";
  
         NSLog(@"aperiph--%@", aPeripheral.name);
     NSLog(@"rssi -- %d",[RSSI intValue]);
+    NSLog(@"counter -- %d",counter);
     
     
-    if(aPeripheral && [aPeripheral.name rangeOfString:@"My Arduino" ].location!=NSNotFound && [RSSI intValue] > -35)
+    if(aPeripheral && [aPeripheral.name rangeOfString:@"My Arduino" ].location!=NSNotFound && [RSSI intValue] > -45 && (!(counter < 5) ||(counter == 0) ))
     {
-     
-        [manager connectPeripheral:aPeripheral options:nil];
+        counter=0;
+        
+        NSLog(@"CONNECTED CONNECTED");
+        
+        [manager stopScan];
+        //once the peripheral has been connected, we update the feedbac, label, enable the connect button and change its label to 'disconnect'
+        
+        [statusConnection setStringValue:@"Connected"];
+        [self sendData];
+ 
+        
+    
+        
+        
+//        [manager connectPeripheral:aPeripheral options:nil];
         
         //have to set the current peripheral to a strong variable so that it is retained and doesn't get dealloced while it is being connected
         [self.proxima setDelegate:self];
@@ -262,7 +299,7 @@ static NSString * const XXServiceType = @"proxima-service";
     self.rssiTimer = [NSTimer scheduledTimerWithTimeInterval:1.0 target:self selector:@selector(checkRssi) userInfo:nil repeats:YES];
     
     
-//    [self sendData];
+    [self sendData];
 
     
   }
@@ -274,6 +311,7 @@ static NSString * const XXServiceType = @"proxima-service";
 
 - (void) checkRssi
 {
+    counter ++;
   [self.proxima readRSSI];
 }
 
@@ -281,10 +319,20 @@ static NSString * const XXServiceType = @"proxima-service";
 - (void)peripheralDidUpdateRSSI:(CBPeripheral *)peripheral error:(NSError *)error
 {
    NSLog(@"rssi -- %@", peripheral.RSSI);
-
-    if([peripheral.RSSI intValue] < -35)
+    if([peripheral.RSSI intValue] < -45)
     {
-        [manager cancelPeripheralConnection:self.proxima];
+        NSLog(@"DISCONNECTED DISCONNECTED");
+        counter=0;
+        
+        [statusConnection setStringValue:@"Disconnected"];
+        [connectButton setTitle:@"Connect"];
+        if( self.proxima)
+        {
+            [self.proxima setDelegate:nil];
+            self.proxima = nil;
+        }
+        [self startScan];
+
         [self.rssiTimer invalidate];
         self.rssiTimer = nil;
        
@@ -298,7 +346,7 @@ static NSString * const XXServiceType = @"proxima-service";
 - (void)centralManager:(CBCentralManager *)central didDisconnectPeripheral:(CBPeripheral *)aPeripheral error:(NSError *)error
 {
       NSLog(@"DISCONNECTED DISCONNECTED");
-
+    counter=0;
   
 	[statusConnection setStringValue:@"Disconnected"];
     [connectButton setTitle:@"Connect"];
@@ -326,6 +374,20 @@ static NSString * const XXServiceType = @"proxima-service";
 
 #pragma mark - sending files
 - (void)sendData {
+    
+    NSLog(@"DISCONNECTED DISCONNECTED");
+    counter=0;
+    
+    [statusConnection setStringValue:@"Disconnected"];
+    if( self.proxima)
+    {
+        [self.proxima setDelegate:nil];
+        self.proxima = nil;
+    }
+    [self startScan];
+    
+    [self.rssiTimer invalidate];
+    self.rssiTimer = nil;
     
 
     CWInterface *wif = [CWInterface interface];
