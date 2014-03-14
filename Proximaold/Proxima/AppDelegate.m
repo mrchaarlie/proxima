@@ -190,7 +190,7 @@ static NSString * const XXServiceType = @"proxima-service";
     NSLog(@"rssi -- %d",[RSSI intValue]);
     
     
-    if(aPeripheral && [aPeripheral.name rangeOfString:@"My Arduino" ].location!=NSNotFound && [RSSI intValue] > -50)
+    if(aPeripheral && [aPeripheral.name rangeOfString:@"My Arduino" ].location!=NSNotFound && [RSSI intValue] > -35)
     {
      
         [manager connectPeripheral:aPeripheral options:nil];
@@ -282,7 +282,7 @@ static NSString * const XXServiceType = @"proxima-service";
 {
    NSLog(@"rssi -- %@", peripheral.RSSI);
 
-    if([peripheral.RSSI intValue] < -50)
+    if([peripheral.RSSI intValue] < -35)
     {
         [manager cancelPeripheralConnection:self.proxima];
         [self.rssiTimer invalidate];
