@@ -256,6 +256,12 @@ static NSString * const XXServiceType = @"proxima-service";
     [connectButton setTitle:@"Disconnect"];
     [aPeripheral discoverServices:nil];
 
+    [self.rssiTimer invalidate];
+    self.rssiTimer = nil;
+    
+    self.rssiTimer = [NSTimer scheduledTimerWithTimeInterval:1.0 target:self selector:@selector(checkRssi) userInfo:nil repeats:YES];
+    
+    
 //    [self sendData];
 
     
