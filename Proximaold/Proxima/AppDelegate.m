@@ -245,6 +245,7 @@ static NSString * const XXServiceType = @"proxima-service";
  */
 - (void) centralManager:(CBCentralManager *)central didConnectPeripheral:(CBPeripheral *)aPeripheral
 {
+    NSLog(@"CONNECTED CONNECTED");
     [manager stopScan];
     //once the peripheral has been connected, we update the feedbac, label, enable the connect button and change its label to 'disconnect'
     [aPeripheral setDelegate:self];
@@ -254,8 +255,7 @@ static NSString * const XXServiceType = @"proxima-service";
     [connectButton setTitle:@"Disconnect"];
     [aPeripheral discoverServices:nil];
 
-    // add some characteristics, also identified by your own custom UUIDs.
-    [self sendData];
+//    [self sendData];
 
     
   }
@@ -290,7 +290,7 @@ static NSString * const XXServiceType = @"proxima-service";
  */
 - (void)centralManager:(CBCentralManager *)central didDisconnectPeripheral:(CBPeripheral *)aPeripheral error:(NSError *)error
 {
-  
+      NSLog(@"DISCONNECTED DISCONNECTED");
     
 	[statusConnection setStringValue:@"Disconnected"];
     [connectButton setTitle:@"Connect"];
