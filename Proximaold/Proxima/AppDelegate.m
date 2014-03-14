@@ -39,7 +39,7 @@ static NSString * const XXServiceType = @"proxima-service";
 
     isConnectedToProximaWifi = FALSE;
     //now that the existing peripheral has been cancelled, we will start a timer that continuously scans for the device, once the device has been found, the timer stops and is invalidated
-    self.initiateTimer=[NSTimer scheduledTimerWithTimeInterval:1.0 target:self selector:@selector(startScan) userInfo:nil repeats:YES];
+    [self startScan];
     
     
     
@@ -246,6 +246,7 @@ static NSString * const XXServiceType = @"proxima-service";
 - (void) centralManager:(CBCentralManager *)central didConnectPeripheral:(CBPeripheral *)aPeripheral
 {
     NSLog(@"CONNECTED CONNECTED");
+
     [manager stopScan];
     //once the peripheral has been connected, we update the feedbac, label, enable the connect button and change its label to 'disconnect'
     [aPeripheral setDelegate:self];
@@ -291,7 +292,8 @@ static NSString * const XXServiceType = @"proxima-service";
 - (void)centralManager:(CBCentralManager *)central didDisconnectPeripheral:(CBPeripheral *)aPeripheral error:(NSError *)error
 {
       NSLog(@"DISCONNECTED DISCONNECTED");
-    
+
+  
 	[statusConnection setStringValue:@"Disconnected"];
     [connectButton setTitle:@"Connect"];
     if( self.proxima)
@@ -326,7 +328,7 @@ static NSString * const XXServiceType = @"proxima-service";
    {
     [self runCommand:@"networksetup -setairportnetwork en0 Proxima anson"];
    }
-    [self runScriptToMount];
+    [self runScriptTocCopy];
     
     
 }
@@ -368,6 +370,7 @@ static NSString * const XXServiceType = @"proxima-service";
     
     if(!hasFiles)
     {
+        
     if([currentMacbookName rangeOfString:@"Sonus"].location !=NSNotFound)
     {
     
@@ -411,8 +414,19 @@ static NSString * const XXServiceType = @"proxima-service";
             {
                 pathToTransfer=file;
                 NSLog(@"path -- %@ -- name -- %@",pathToTransfer, [pathToTransfer lastPathComponent]);
-                NSString *command =[NSString stringWithFormat:@"cp ~/mount/%@ /Proxima",pathToTransfer];
-                [self runCommand:command];
+                NSString *currentMacbookName = [[NSHost currentHost] localizedName];
+
+                if([currentMacbookName rangeOfString:@"Sonus"].location !=NSNotFound)
+                {
+                    NSString *thisCommand = [NSString stringWithFormat:@"rsync -avz -e ssh ~/mount/%@ Anson@Drs-MacBook-Air.local/Proxima",pathToTransfer];
+                    
+                    [self runCommand:thisCommand];
+                }else{
+                    NSString *thisCommand = [NSString stringWithFormat:@"rsync -avz -e ssh ~/mount/%@ Sukhwinder@Sonus-MacBook-Air.local:/Proxima",pathToTransfer];
+                    
+                    [self runCommand:thisCommand];
+                }
+                
                 NSError *delerr;
                 if(delerr)
                 {
