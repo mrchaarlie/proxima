@@ -213,8 +213,7 @@ static NSString * const XXServiceType = @"proxima-service";
     NSLog(@"rssi -- %d",[RSSI intValue]);
     NSLog(@"counter -- %d",counter);
     
-    
-    if(aPeripheral && [aPeripheral.name rangeOfString:@"My Arduino" ].location!=NSNotFound && [RSSI intValue] > -45  )
+    if(aPeripheral && [aPeripheral.name rangeOfString:@"My Arduino" ].location!=NSNotFound && [RSSI intValue] > -55)
     {
         counter=0;
         
@@ -225,13 +224,7 @@ static NSString * const XXServiceType = @"proxima-service";
         
         [statusConnection setStringValue:@"Connected"];
         [self sendData];
- 
-        
-    
-        
-        
-//        [manager connectPeripheral:aPeripheral options:nil];
-        
+
         //have to set the current peripheral to a strong variable so that it is retained and doesn't get dealloced while it is being connected
         [self.proxima setDelegate:self];
         self.proxima=aPeripheral;
@@ -319,7 +312,7 @@ static NSString * const XXServiceType = @"proxima-service";
 - (void)peripheralDidUpdateRSSI:(CBPeripheral *)peripheral error:(NSError *)error
 {
    NSLog(@"rssi -- %@", peripheral.RSSI);
-    if([peripheral.RSSI intValue] < -45)
+    if([peripheral.RSSI intValue] < -55)
     {
         NSLog(@"DISCONNECTED DISCONNECTED");
         counter=0;
