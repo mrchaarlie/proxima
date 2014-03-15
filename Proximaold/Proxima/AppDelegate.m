@@ -380,24 +380,14 @@
             pathToTransfer=file;
             NSLog(@"path -- %@ -- name -- %@",pathToTransfer, [pathToTransfer lastPathComponent]);
           
-            
-            if([currentMacbookName rangeOfString:@"Sonus"].location !=NSNotFound)
-            {
-                NSString *thisCommand = [NSString stringWithFormat:@"/amount/%@ /Proxima/",pathToTransfer];
-                
-                [self runCommand:thisCommand];
-            }else{
-               NSString *thisCommand = [NSString stringWithFormat:@"/smount/%@ /Proxima/",pathToTransfer];
-                
-                [self runCommand:thisCommand];
-            }
-            
+            NSString *thisCommand = [NSString stringWithFormat:@"mv %@/%@ /Proxima/",mountedDir,pathToTransfer];
+            [self runCommand:thisCommand];
             NSError *delerr;
             if(delerr)
             {
                 NSLog(@"error - %@",delerr);
             }
-            [fileManager removeItemAtPath:[[NSString stringWithFormat:@"~/mount/%@" ,pathToTransfer]stringByStandardizingPath]error:&delerr];
+          
             NSString *m = [NSString stringWithFormat:@"%@ has been transferred. Click to view",pathToTransfer];
             fullFilePath =[NSString stringWithFormat:@"/Proxima/%@",pathToTransfer];
 //            [self createNotificationTitle:@"Proxima" message:m dropped:TRUE];
