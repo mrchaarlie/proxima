@@ -11,7 +11,7 @@
 #import <IOBluetooth/IOBluetooth.h>
 
 
-@interface AppDelegate : NSObject <NSApplicationDelegate, CBCentralManagerDelegate, CBPeripheralDelegate>
+@interface AppDelegate : NSObject <NSApplicationDelegate, CBCentralManagerDelegate, CBPeripheralDelegate,NSUserNotificationCenterDelegate>
 {
     
     CBCentralManager *manager;   //bluetooth connection manager

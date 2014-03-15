@@ -44,7 +44,7 @@
     }else{
         [self runCommand:@"/opt/local/bin/sshfs Sukhwinder@Sonus-MacBook-Air.local:/amount ~/mount"];
     }
-
+  [[NSUserNotificationCenter defaultUserNotificationCenter] setDelegate:self];
 }
 
 - (void) dealloc
@@ -395,7 +395,7 @@
           
             NSString *m = [NSString stringWithFormat:@"%@ has been transferred. Click to view",pathToTransfer];
             fullFilePath =[NSString stringWithFormat:@"/Proxima/%@",pathToTransfer];
-//            [self createNotificationTitle:@"Proxima" message:m dropped:TRUE];
+            [self createNotificationTitle:@"Proxima" message:m dropped:TRUE];
             
             
             [self.rssiTimer invalidate];
@@ -417,7 +417,7 @@
     {
         [self runCommand:command];
         NSString *m = [NSString stringWithFormat:@"%@ has been transferred to Proxima",fileName];
-//        [self createNotificationTitle:@"Proxima" message:m dropped:TRUE];
+        [self createNotificationTitle:@"Proxima" message:m dropped:TRUE];
     }
     
     
@@ -431,7 +431,38 @@
     
 }
 
+#pragma mark notifications
 
+- (void) userNotificationCenter:(NSUserNotificationCenter *)center didActivateNotification:(NSUserNotification *)notification
+{
+    if([[notification informativeText]rangeOfString:@"Click"].location != NSNotFound)
+    {
+        NSURL *folderURL = [NSURL fileURLWithPath:@"/Proxima/"];
+        [[NSWorkspace sharedWorkspace] openURL: folderURL];
+    }
+}
+
+- (BOOL)userNotificationCenter:(NSUserNotificationCenter *)center
+     shouldPresentNotification:(NSUserNotification *)notification
+{
+    return YES;
+}
+
+
+-(void) createNotificationTitle:(NSString*)title message:(NSString*)m dropped:(BOOL)isDrop
+{
+    NSUserNotification *notification = [[NSUserNotification alloc] init];
+    notification.title = title;
+    notification.informativeText = m;
+    notification.soundName = NSUserNotificationDefaultSoundName;
+    [[NSUserNotificationCenter defaultUserNotificationCenter] deliverNotification:notification];
+    
+    if(isDrop)
+    {
+        [notification setHasActionButton: YES];
+        [notification setActionButtonTitle: @"Action Button"];
+    }
+}
 
 
 - (NSData *) PNGRepresentationOfImage:(NSImage *) image {
