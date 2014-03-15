@@ -263,7 +263,7 @@
     
     NSLog(@"connected -- %@",aPeripheral);
 	self.connected = @"Connected";
-    
+    [self sendData];
     self.rssiTimer = [NSTimer scheduledTimerWithTimeInterval:1.0 target:self selector:@selector(checkRssi) userInfo:nil repeats:YES];
     
   }
