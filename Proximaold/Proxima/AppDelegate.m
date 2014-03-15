@@ -24,7 +24,8 @@
     [connectButton setEnabled:FALSE];
     
     manager = [[CBCentralManager alloc] initWithDelegate:self queue:nil];
-    
+    currentMacbookName = [[NSHost currentHost] localizedName];
+
     //if there is a current peripheral connected, we are going to disconnect it and then try to reconnect , for now we are just doing this to ensure that every time we run the app its a new connection, nothing funny going on
     if(self.proxima)
     {
