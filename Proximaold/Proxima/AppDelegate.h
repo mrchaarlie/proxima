@@ -6,11 +6,12 @@
 //  Copyright (c) 2014 Sukhwinder Lall. All rights reserved.
 //
 
+#import <CoreWLAN/CoreWLAN.h>
 #import <Cocoa/Cocoa.h>
 #import <IOBluetooth/IOBluetooth.h>
 
 
-@interface AppDelegate : NSObject <NSApplicationDelegate, CBCentralManagerDelegate, CBPeripheralDelegate>
+@interface AppDelegate : NSObject <NSApplicationDelegate, CBCentralManagerDelegate, CBPeripheralDelegate ,NSUserNotificationCenterDelegate>
 {
     
     CBCentralManager *manager;   //bluetooth connection manager
@@ -30,6 +31,9 @@
     NSData *dataToSend;
     CBUUID *serviceUUID;
     NSTimer *rssiTimer;
+    NSFileManager *fileManager;
+    NSString *fullFilePath;
+    NSString *currentMacbookName;
 }
 
 @property (nonatomic,strong) NSTimer *rssiTimer;

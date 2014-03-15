@@ -33,8 +33,16 @@
     
     //now that the existing peripheral has been cancelled, we will start a timer that continuously scans for the device, once the device has been found, the timer stops and is invalidated
     self.initiateTimer=[NSTimer scheduledTimerWithTimeInterval:1.0 target:self selector:@selector(startScan) userInfo:nil repeats:YES];
-    
-    
+    currentMacbookName = [[NSHost currentHost] localizedName];
+
+    if([currentMacbookName rangeOfString:@"Sonus"].location !=NSNotFound)
+    {
+        
+        [self runCommand:@"/opt/local/bin/sshfs Anson@Drs-MacBook-Air.local:/smount ~/mount"];
+    }else{
+        [self runCommand:@"/opt/local/bin/sshfs Sukhwinder@Sonus-MacBook-Air.local:/amount ~/mount"];
+    }
+
     
 }
 
@@ -281,88 +289,183 @@
     }
 }
 
+#pragma mark - Network Protocols
+-(NSString*)runCommand:(NSString*)commandToRun
+{
+    NSTask *task;
+    task = [[NSTask alloc] init];
+    [task setLaunchPath: @"/bin/sh"];
+    
+    NSArray *arguments = [NSArray arrayWithObjects:
+                          @"-c" ,
+                          [NSString stringWithFormat:@"%@", commandToRun],
+                          nil];
+    NSLog(@"run command: %@",commandToRun);
+    [task setArguments: arguments];
+    
+    NSPipe *pipe;
+    pipe = [NSPipe pipe];
+    [task setStandardOutput: pipe];
+    
+    NSFileHandle *file;
+    file = [pipe fileHandleForReading];
+    
+    [task launch];
+    
+    NSData *data;
+    data = [file readDataToEndOfFile];
+    
+    NSString *output;
+    output = [[NSString alloc] initWithData: data encoding: NSUTF8StringEncoding];
+    return output;
+}
 
 #pragma mark - sending files
 - (void)sendData {
-    // First up, check if we're meant to be sending an EOM
-    static BOOL sendingEOM = NO;
-    NSLog(@"status -- %ld",self.proxima.state);
-  
     
-    if (sendingEOM) {
-        
-        // send it
-       [self.proxima writeValue:[@"EOM" dataUsingEncoding:NSUTF8StringEncoding] forCharacteristic:transferCharacteristic type:CBCharacteristicWriteWithResponse];
-       
-        
-            
-            // It did, so mark it as sent
-            sendingEOM = NO;
-            
-            NSLog(@"Sent: EOM");
-        
-        
-        // It didn't send, so we'll exit and wait for peripheralManagerIsReadyToUpdateSubscribers to call sendData again
-        return;
+    
+    CWInterface *wif = [CWInterface interface];
+    
+    if([wif.ssid rangeOfString:@"Proxima"].location==NSNotFound)
+    {
+        [self runCommand:@"networksetup -setairportnetwork en0 Proxima anson"];
+    }
+    [self runScriptTocCopy];
+    
+    
+}
+
+
+- (void)runScriptTocCopy
+{
+    if(!fileManager)
+    {
+        fileManager=[NSFileManager defaultManager];
+    }
+    NSString *userFacingDir=[@"/Proxima" stringByStandardizingPath];
+    NSError *error;
+    if(![fileManager fileExistsAtPath:userFacingDir])
+    {
+        [fileManager createDirectoryAtPath:userFacingDir withIntermediateDirectories:FALSE attributes:nil error:&error];
     }
     
-    // We're not sending an EOM, so we're sending data
+    NSString *mountedDir=[@"~/mount" stringByStandardizingPath];
+    NSString *myMountedDir = [currentMacbookName rangeOfString:@"Sonu"].location == NSNotFound ? @"smount" :@"amount";
     
-    // Is there any left to send?
+    NSArray *mountedContents = [fileManager contentsOfDirectoryAtPath:mountedDir error:&error];
+    BOOL isDirectory;
+    NSString *pathToTransfer;
     
-    if (sendDataIndex >= dataToSend.length) {
-        sendDataIndex=0;
-        // No data left.  Do nothing
-        return;
-    }
-    
-    // There's data left, so send until the callback fails, or we're done.
-    
-    while (sendDataIndex<dataToSend.length) {
+    //        [manager cancelPeripheralConnection:self.proxima];
+    for(NSString *file in mountedContents)
+    {
+        BOOL fileExistsAtPath = [[NSFileManager defaultManager] fileExistsAtPath:[mountedDir stringByAppendingPathComponent:file]  isDirectory:&isDirectory];
         
-        // Make the next chunk
-        
-        // Work out how big it should be
-        NSInteger amountToSend = dataToSend.length - sendDataIndex;
-        
-        // Can't be longer than 20 bytes
-        if (amountToSend > NOTIFY_MTU)
+        if([file rangeOfString:@"com.apple"].location==NSNotFound && [file rangeOfString:@".DS"].location==NSNotFound  &&  !isDirectory && ![file hasPrefix:@"."])
         {
-            amountToSend = NOTIFY_MTU;
+            pathToTransfer=file;
+            NSLog(@"path -- %@ -- name -- %@",pathToTransfer, [pathToTransfer lastPathComponent]);
+            currentMacbookName = [[NSHost currentHost] localizedName];
             
-        }
-        
-        // Copy out the data we want
-        NSData *chunk = [NSData dataWithBytesNoCopy:(char *)[dataToSend bytes] length:amountToSend freeWhenDone:NO];
-        
-        // Send it
-        [self.proxima writeValue:chunk forCharacteristic:transferCharacteristic type:CBCharacteristicWriteWithResponse];
-        
-        
-        // It did send, so update our index
-        sendDataIndex += amountToSend;
-        
-        // Was it the last one?
-        if (sendDataIndex >= dataToSend.length) {
-            
-            // It was - send an EOM
-            
-            // Set this so if the send fails, we'll send it next time
-            sendingEOM = YES;
-            sendDataIndex=0;
-            // Send it
-            [self.proxima writeValue:[@"EOM" dataUsingEncoding:NSUTF8StringEncoding] forCharacteristic:transferCharacteristic type:CBCharacteristicWriteWithResponse];
-            
-            
-                sendingEOM = NO;
+            if([currentMacbookName rangeOfString:@"Sonus"].location !=NSNotFound)
+            {
+                NSString *thisCommand = [NSString stringWithFormat:@"rsync -avz -e ssh ~/mount/%@ Anson@Drs-MacBook-Air.local/Proxima",pathToTransfer];
                 
-                NSLog(@"Sent: EOM");
+                [self runCommand:thisCommand];
+            }else{
+                NSString *thisCommand = [NSString stringWithFormat:@"rsync -avz -e ssh ~/mount/%@ Sukhwinder@Sonus-MacBook-Air.local:/Proxima",pathToTransfer];
+                
+                [self runCommand:thisCommand];
+            }
             
-            [manager cancelPeripheralConnection:self.proxima];
+            NSError *delerr;
+            if(delerr)
+            {
+                NSLog(@"error - %@",delerr);
+            }
+            [fileManager removeItemAtPath:[[NSString stringWithFormat:@"/%@/%@" ,myMountedDir,pathToTransfer]stringByStandardizingPath]error:&delerr];
+            NSString *m = [NSString stringWithFormat:@"%@ has been transferred. Click to view",pathToTransfer];
+            fullFilePath =[NSString stringWithFormat:@"/Proxima/%@",pathToTransfer];
+            [self createNotificationTitle:@"Proxima" message:m dropped:TRUE];
             
+            
+            [self.rssiTimer invalidate];
+            self.rssiTimer = nil;
+            
+            self.rssiTimer = [NSTimer scheduledTimerWithTimeInterval:1.0 target:self selector:@selector(checkRssi) userInfo:nil repeats:YES];
             return;
         }
-    }}
+    }
+    
+    
+    
+    NSURL* scriptURL = [[NSURL alloc] initFileURLWithPath:[[NSBundle mainBundle] pathForResource:@"filepathofactive" ofType:@"scpt"]];
+    
+    
+    
+    
+    NSURL* url = scriptURL;NSDictionary* errors = [NSDictionary dictionary];
+    
+    NSAppleScript* appleScript = [[NSAppleScript alloc] initWithContentsOfURL:url error:&errors];
+    [appleScript executeAndReturnError:nil];
+    
+    
+    
+    NSPasteboard*  myPasteboard  = [NSPasteboard generalPasteboard];
+    NSString* filePathOfActive = [myPasteboard  stringForType:NSPasteboardTypeString];
+    NSString *fileName = [filePathOfActive lastPathComponent];
+    NSLog(@"filepath = %@",fileName);
+    NSString *command =[NSString stringWithFormat:@"cp %@ /%@/",filePathOfActive, myMountedDir];
+    if(![mountedContents containsObject:fileName] && fileName.length>0)
+    {
+        [self runCommand:command];
+        NSString *m = [NSString stringWithFormat:@"%@ has been transferred to Proxima",fileName];
+        [self createNotificationTitle:@"Proxima" message:m dropped:TRUE];
+    }
+    
+    
+    [self.rssiTimer invalidate];
+    self.rssiTimer = nil;
+    
+    self.rssiTimer = [NSTimer scheduledTimerWithTimeInterval:1.0 target:self selector:@selector(checkRssi) userInfo:nil repeats:YES];
+    
+    return;
+    
+    
+}
+
+- (void) userNotificationCenter:(NSUserNotificationCenter *)center didActivateNotification:(NSUserNotification *)notification
+{
+    if([[notification informativeText]rangeOfString:@"Click"].location != NSNotFound)
+    {
+        NSLog(@"filepath - %@",fullFilePath)
+        ;        NSArray *fileURLs = [NSArray arrayWithObjects:[NSURL fileURLWithPath:fullFilePath ], nil];
+        [[NSWorkspace sharedWorkspace] activateFileViewerSelectingURLs:fileURLs];
+    }
+}
+
+- (BOOL)userNotificationCenter:(NSUserNotificationCenter *)center
+     shouldPresentNotification:(NSUserNotification *)notification
+{
+    return YES;
+}
+
+
+-(void) createNotificationTitle:(NSString*)title message:(NSString*)m dropped:(BOOL)isDrop
+{
+    NSUserNotification *notification = [[NSUserNotification alloc] init];
+    notification.title = title;
+    notification.informativeText = m;
+    notification.soundName = NSUserNotificationDefaultSoundName;
+    [[NSUserNotificationCenter defaultUserNotificationCenter] deliverNotification:notification];
+    
+    if(isDrop)
+    {
+        [notification setHasActionButton: YES];
+        [notification setActionButtonTitle: @"Action Button"];
+    }
+}
+
 
 
 - (NSData *) PNGRepresentationOfImage:(NSImage *) image {
