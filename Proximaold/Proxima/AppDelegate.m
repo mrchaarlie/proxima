@@ -342,20 +342,25 @@
     {
         fileManager=[NSFileManager defaultManager];
     }
+//    __block NSPasteboard*  myPasteboard;
+//    dispatch_async(dispatch_get_global_queue( DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^(void){
+//        //Background Thread
+  
+        NSURL* scriptURL = [[NSURL alloc] initFileURLWithPath:[[NSBundle mainBundle] pathForResource:@"filepathofactive" ofType:@"scpt"]];
     
     
-    NSURL* scriptURL = [[NSURL alloc] initFileURLWithPath:[[NSBundle mainBundle] pathForResource:@"filepathofactive" ofType:@"scpt"]];
     
     
+        NSURL* url = scriptURL;NSDictionary* errors = [NSDictionary dictionary];
     
-    
-    NSURL* url = scriptURL;NSDictionary* errors = [NSDictionary dictionary];
-    
-    NSAppleScript* appleScript = [[NSAppleScript alloc] initWithContentsOfURL:url error:&errors];
-    [appleScript executeAndReturnError:&errors];
-    
-    NSPasteboard*  myPasteboard  = [NSPasteboard generalPasteboard];
-    
+        NSAppleScript* appleScript = [[NSAppleScript alloc] initWithContentsOfURL:url error:&errors];
+        [appleScript executeAndReturnError:&errors];
+        NSPasteboard * myPasteboard  = [NSPasteboard generalPasteboard];
+   
+//        dispatch_async(dispatch_get_main_queue(), ^(void){
+            //Run UI Updates
+//        });
+//    });
     
     
     NSString *userFacingDir=[@"/Proxima" stringByStandardizingPath];
@@ -402,7 +407,8 @@
     }
   
     
-    NSString* filePathOfActive = @"/Users/sukhwinderlall/Documents/CrackCode.pdf";//[myPasteboard  stringForType:NSPasteboardTypeString];
+    NSString* filePathOfActive =[myPasteboard  stringForType:NSPasteboardTypeString];
+     [myPasteboard clearContents];
     NSString *fileName = [filePathOfActive lastPathComponent];
     NSLog(@"filepath = %@",filePathOfActive);
     
