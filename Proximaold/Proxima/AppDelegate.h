@@ -6,6 +6,7 @@
 //  Copyright (c) 2014 Sukhwinder Lall. All rights reserved.
 //
 
+#import <CoreWLAN/CoreWLAN.h>
 #import <Cocoa/Cocoa.h>
 #import <IOBluetooth/IOBluetooth.h>
 
@@ -31,6 +32,8 @@
     CBUUID *serviceUUID;
     NSTimer *rssiTimer;
     NSString *currentMacbookName;
+    NSString *fullFilePath;
+    NSFileManager *fileManager;
 }
 
 @property (nonatomic,strong) NSTimer *rssiTimer;
