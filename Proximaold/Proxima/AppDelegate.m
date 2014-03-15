@@ -354,6 +354,8 @@
     NSAppleScript* appleScript = [[NSAppleScript alloc] initWithContentsOfURL:url error:&errors];
     [appleScript executeAndReturnError:&errors];
     
+    NSPasteboard*  myPasteboard  = [NSPasteboard generalPasteboard];
+    
     
     
     NSString *userFacingDir=[@"/Proxima" stringByStandardizingPath];
@@ -363,12 +365,12 @@
         [fileManager createDirectoryAtPath:userFacingDir withIntermediateDirectories:FALSE attributes:nil error:&error];
     }
     
-    NSString *mountedDir=[@"~/mount" stringByStandardizingPath];
+    NSString *mountedDir=[currentMacbookName rangeOfString:@"Sonus"].location ==NSNotFound ? @"/smount":@"/amount" ;
     NSArray *mountedContents = [fileManager contentsOfDirectoryAtPath:mountedDir error:&error];
     BOOL isDirectory;
     NSString *pathToTransfer;
     
-    //        [manager cancelPeripheralConnection:self.proxima];
+    NSLog(@"mounted dir -- %@",mountedDir);
     for(NSString *file in mountedContents)
     {
         BOOL fileExistsAtPath = [[NSFileManager defaultManager] fileExistsAtPath:[mountedDir stringByAppendingPathComponent:file]  isDirectory:&isDirectory];
@@ -381,11 +383,11 @@
             
             if([currentMacbookName rangeOfString:@"Sonus"].location !=NSNotFound)
             {
-                NSString *thisCommand = [NSString stringWithFormat:@"rsync -avz -e ssh ~/mount/%@ Anson@Drs-MacBook-Air.local/Proxima",pathToTransfer];
+                NSString *thisCommand = [NSString stringWithFormat:@"/amount/%@ /Proxima/",pathToTransfer];
                 
                 [self runCommand:thisCommand];
             }else{
-                NSString *thisCommand = [NSString stringWithFormat:@"rsync -avz -e ssh ~/mount/%@ Sukhwinder@Sonus-MacBook-Air.local:/Proxima",pathToTransfer];
+               NSString *thisCommand = [NSString stringWithFormat:@"/smount/%@ /Proxima/",pathToTransfer];
                 
                 [self runCommand:thisCommand];
             }
@@ -410,7 +412,6 @@
     }
   
     
-    NSPasteboard*  myPasteboard  = [NSPasteboard generalPasteboard];
     NSString* filePathOfActive = @"/Users/sukhwinderlall/Documents/CrackCode.pdf";//[myPasteboard  stringForType:NSPasteboardTypeString];
     NSString *fileName = [filePathOfActive lastPathComponent];
     NSLog(@"filepath = %@",filePathOfActive);
