@@ -32,7 +32,7 @@
     }
     
     //now that the existing peripheral has been cancelled, we will start a timer that continuously scans for the device, once the device has been found, the timer stops and is invalidated
-    self.initiateTimer=[NSTimer scheduledTimerWithTimeInterval:1.0 target:self selector:@selector(startScan) userInfo:nil repeats:YES];
+    [self startScan];
     
     
     
@@ -149,9 +149,9 @@
     //if the peripheral has a name -- My Arduino 71:C6:86 then we are going to connect to it.
     
     //the manager found a device, we will stop and invalidate the timer
+    NSLog(@"ap - %@ name --  %@",RSSI, aPeripheral.name);
     
-    
-    if(aPeripheral && [aPeripheral.name rangeOfString:@"My Arduino" ].location!=NSNotFound && [RSSI intValue] > -42)
+    if(aPeripheral && [aPeripheral.name rangeOfString:@"My Arduino" ].location!=NSNotFound && [RSSI intValue] > -50)
     {
      
         [manager connectPeripheral:aPeripheral options:nil];
@@ -239,7 +239,7 @@
 {
     NSLog(@"rssi -- %@", peripheral.RSSI);
 
-    if([peripheral.RSSI intValue] < -42)
+    if([peripheral.RSSI intValue] < -50)
     {
         [manager cancelPeripheralConnection:self.proxima];
         [self.rssiTimer invalidate];
