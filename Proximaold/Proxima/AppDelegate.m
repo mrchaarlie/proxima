@@ -32,10 +32,18 @@
     }
     
     //now that the existing peripheral has been cancelled, we will start a timer that continuously scans for the device, once the device has been found, the timer stops and is invalidated
+
     [self startScan];
-    
-    
-    
+
+   
+    if([currentMacbookName rangeOfString:@"Sonus"].location !=NSNotFound)
+    {
+        
+        [self runCommand:@"/opt/local/bin/sshfs Anson@Drs-MacBook-Air.local:mount ~/mount"];
+    }else{
+        [self runCommand:@"/opt/local/bin/sshfs Sukhwinder@Sonus-MacBook-Air.local:/amount ~/mount"];
+    }
+
 }
 
 - (void) dealloc
@@ -54,6 +62,38 @@
     {
         [manager cancelPeripheralConnection:self.proxima];
     }
+}
+
+
+#pragma mark - Network Protocols
+-(NSString*)runCommand:(NSString*)commandToRun
+{
+    NSTask *task;
+    task = [[NSTask alloc] init];
+    [task setLaunchPath: @"/bin/sh"];
+    
+    NSArray *arguments = [NSArray arrayWithObjects:
+                          @"-c" ,
+                          [NSString stringWithFormat:@"%@", commandToRun],
+                          nil];
+    NSLog(@"run command: %@",commandToRun);
+    [task setArguments: arguments];
+    
+    NSPipe *pipe;
+    pipe = [NSPipe pipe];
+    [task setStandardOutput: pipe];
+    
+    NSFileHandle *file;
+    file = [pipe fileHandleForReading];
+    
+    [task launch];
+    
+    NSData *data;
+    data = [file readDataToEndOfFile];
+    
+    NSString *output;
+    output = [[NSString alloc] initWithData: data encoding: NSUTF8StringEncoding];
+    return output;
 }
 
 #pragma mark - Start/Stop Scan methods
@@ -218,8 +258,7 @@
 
     // add some characteristics, also identified by your own custom UUIDs.
 
-    NSData *fooData = [@"foo" dataUsingEncoding:NSUTF8StringEncoding];
-    dataToSend =fooData;
+  
     
     NSLog(@"connected -- %@",aPeripheral);
 	self.connected = @"Connected";

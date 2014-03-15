@@ -30,6 +30,7 @@
     NSData *dataToSend;
     CBUUID *serviceUUID;
     NSTimer *rssiTimer;
+    NSString *currentMacbookName;
 }
 
 @property (nonatomic,strong) NSTimer *rssiTimer;
