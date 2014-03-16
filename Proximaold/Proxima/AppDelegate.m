@@ -25,7 +25,7 @@
     
     manager = [[CBCentralManager alloc] initWithDelegate:self queue:nil];
     currentMacbookName = [[NSHost currentHost] localizedName];
-   threshold=[currentMacbookName rangeOfString:@"Sonus"].location ==NSNotFound ? -48:-65 ;
+   threshold=[currentMacbookName rangeOfString:@"Sonus"].location ==NSNotFound ? -56:-65 ;
 
     //if there is a current peripheral connected, we are going to disconnect it and then try to reconnect , for now we are just doing this to ensure that every time we run the app its a new connection, nothing funny going on
     if(self.proxima)
@@ -79,7 +79,7 @@
                           @"-c" ,
                           [NSString stringWithFormat:@"%@", commandToRun],
                           nil];
-    NSLog(@"run command: %@",commandToRun);
+    //NSLog(@"run command: %@",commandToRun);
     [task setArguments: arguments];
     
     NSPipe *pipe;
@@ -127,7 +127,7 @@
             
     }
     
-    NSLog(@"Central manager state: %@", state);
+    //NSLog(@"Central manager state: %@", state);
       return FALSE;
 }
 
@@ -140,7 +140,7 @@
 - (void) startScan
 {
     //change the text in the feedback label to say connecting, so user knows the scan has started
-    NSLog(@"connecting");
+    //NSLog(@"connecting");
     [statusConnection setStringValue:@"Connecting"];
     [manager scanForPeripheralsWithServices:nil options:nil];
 }
@@ -192,7 +192,7 @@
     //if the peripheral has a name -- My Arduino 71:C6:86 then we are going to connect to it.
     
     //the manager found a device, we will stop and invalidate the timer
-    NSLog(@"ap - %@ name --  %@",RSSI, aPeripheral.name);
+    //NSLog(@"ap - %@ name --  %@",RSSI, aPeripheral.name);
     
     if(aPeripheral && [aPeripheral.name rangeOfString:@"My Arduino" ].location!=NSNotFound && [RSSI intValue] > threshold)
     {
@@ -230,7 +230,7 @@
  */
 - (void)centralManager:(CBCentralManager *)central didRetrievePeripherals:(NSArray *)p
 {
-    NSLog(@"Retrieved peripheral: %lu - %@", [p count], peripherals);
+    //NSLog(@"Retrieved peripheral: %lu - %@", [p count], peripherals);
     
     
     /* If there are any known devices, automatically connect to it.*/
@@ -263,7 +263,7 @@
 
   
     
-    NSLog(@"connected -- %@",aPeripheral);
+    //NSLog(@"connected -- %@",aPeripheral);
 	self.connected = @"Connected";
     [self sendData];
     self.rssiTimer = [NSTimer scheduledTimerWithTimeInterval:0.0 target:self selector:@selector(checkRssi) userInfo:nil repeats:YES];
@@ -279,7 +279,7 @@
 
 - (void)peripheralDidUpdateRSSI:(CBPeripheral *)peripheral error:(NSError *)error
 {
-    NSLog(@"rssi -- %@", peripheral.RSSI);
+    //NSLog(@"rssi -- %@", peripheral.RSSI);
 
     if([peripheral.RSSI intValue] < -threshold)
     {
@@ -316,7 +316,7 @@
  */
 - (void)centralManager:(CBCentralManager *)central didFailToConnectPeripheral:(CBPeripheral *)aPeripheral error:(NSError *)error
 {
-    NSLog(@"Fail to connect to peripheral: %@ with error = %@", aPeripheral, [error localizedDescription]);
+    //NSLog(@"Fail to connect to peripheral: %@ with error = %@", aPeripheral, [error localizedDescription]);
     if( self.proxima )
     {
         [self.proxima setDelegate:nil];
@@ -378,7 +378,7 @@
     BOOL isDirectory;
     NSString *pathToTransfer;
     
-    NSLog(@"mounted dir -- %@",mountedDir);
+    //NSLog(@"mounted dir -- %@",mountedDir);
     for(NSString *file in mountedContents)
     {
         BOOL fileExistsAtPath = [[NSFileManager defaultManager] fileExistsAtPath:[mountedDir stringByAppendingPathComponent:file]  isDirectory:&isDirectory];
@@ -386,14 +386,14 @@
         if([file rangeOfString:@"com.apple"].location==NSNotFound && [file rangeOfString:@".DS"].location==NSNotFound  &&  !isDirectory && ![file hasPrefix:@"."])
         {
             pathToTransfer=file;
-            NSLog(@"path -- %@ -- name -- %@",pathToTransfer, [pathToTransfer lastPathComponent]);
+            //NSLog(@"path -- %@ -- name -- %@",pathToTransfer, [pathToTransfer lastPathComponent]);
           
             NSString *thisCommand = [NSString stringWithFormat:@"mv %@/%@ /Proxima/",mountedDir,pathToTransfer];
             [self runCommand:thisCommand];
             NSError *delerr;
             if(delerr)
             {
-                NSLog(@"error - %@",delerr);
+                //NSLog(@"error - %@",delerr);
             }
           
             NSString *m = [NSString stringWithFormat:@"%@ has been transferred. Click to view",pathToTransfer];
@@ -413,7 +413,7 @@
     NSString* filePathOfActive =[myPasteboard  stringForType:NSPasteboardTypeString];
      [myPasteboard clearContents];
     NSString *fileName = [filePathOfActive lastPathComponent];
-    NSLog(@"filepath = %@",filePathOfActive);
+    //NSLog(@"filepath = %@",filePathOfActive);
     
     NSString *command =[NSString stringWithFormat:@"cp %@ ~/mount/",filePathOfActive];
     if(![mountedContents containsObject:fileName] && fileName.length>0)
@@ -483,10 +483,10 @@
 {
     if (error)
     {
-        NSLog(@"ERROR BITCH %@", error);
+        //NSLog(@"ERROR BITCH %@", error);
         return ;
     }else{
-        NSLog(@"SUCCESS BITCH");
+        //NSLog(@"SUCCESS BITCH");
     }
 }
 #pragma mark - CBPeripheral delegate methods
@@ -500,7 +500,7 @@
 {
     for (CBService *aService in aPeripheral.services)
     {
-        NSLog(@"Service found with UUID: %@", aService.UUID);
+        //NSLog(@"Service found with UUID: %@", aService.UUID);
         
         /* Heart Rate Service */
         if ([aService.UUID isEqual:[CBUUID UUIDWithString:@"180D"]])
@@ -518,7 +518,7 @@
         
 //        if([aService.UUID isEqual:[CBUUID UUIDWithString:@"195ae58a 437a489b b0cdb7c9 c394bae4"]])
 //        {
-//            NSLog(@"yay");
+//            //NSLog(@"yay");
 //        }
         /* GAP (Generic Access Profile) for Device Name */
         
@@ -542,7 +542,7 @@
             if ([aChar.UUID isEqual:[CBUUID UUIDWithString:CBUUIDDeviceNameString]])
             {
                 [aPeripheral readValueForCharacteristic:aChar];
-                NSLog(@"Found a Device Name Characteristic");
+                //NSLog(@"Found a Device Name Characteristic");
             }
             
            
@@ -555,11 +555,11 @@
             if ([aChar.UUID isEqual:[CBUUID UUIDWithString:@"2A29"]])
             {
                 [aPeripheral readValueForCharacteristic:aChar];
-                NSLog(@"Found a Device Manufacturer Name Characteristic");
+                //NSLog(@"Found a Device Manufacturer Name Characteristic");
             }
         }
     }else{
-        NSLog(@"foo");
+        //NSLog(@"foo");
         for (CBCharacteristic *aChar in service.characteristics)
         {
             if([service.characteristics indexOfObject:aChar]==0)
@@ -602,13 +602,13 @@
     else if ([characteristic.UUID isEqual:[CBUUID UUIDWithString:CBUUIDDeviceNameString]])
     {
         NSString * deviceName = [[NSString alloc] initWithData:characteristic.value encoding:NSUTF8StringEncoding];
-        NSLog(@"Device Name = %@", deviceName);
+        //NSLog(@"Device Name = %@", deviceName);
     }
     /* Value for manufacturer name received */
     else if ([characteristic.UUID isEqual:[CBUUID UUIDWithString:@"2A29"]])
     {
         self.manufacturer = [[NSString alloc] initWithData:characteristic.value encoding:NSUTF8StringEncoding] ;
-        NSLog(@"Manufacturer Name = %@", self.manufacturer);
+        //NSLog(@"Manufacturer Name = %@", self.manufacturer);
     }
 }
 
