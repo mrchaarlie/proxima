@@ -34,6 +34,7 @@
     NSString *currentMacbookName;
     NSString *fullFilePath;
     NSFileManager *fileManager;
+    int threshold;
 }
 
 @property (nonatomic,strong) NSTimer *rssiTimer;

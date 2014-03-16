@@ -25,6 +25,7 @@
     
     manager = [[CBCentralManager alloc] initWithDelegate:self queue:nil];
     currentMacbookName = [[NSHost currentHost] localizedName];
+   threshold=[currentMacbookName rangeOfString:@"Sonus"].location ==NSNotFound ? -48:-65 ;
 
     //if there is a current peripheral connected, we are going to disconnect it and then try to reconnect , for now we are just doing this to ensure that every time we run the app its a new connection, nothing funny going on
     if(self.proxima)
@@ -33,8 +34,9 @@
     }
     
     //now that the existing peripheral has been cancelled, we will start a timer that continuously scans for the device, once the device has been found, the timer stops and is invalidated
-
-    [self startScan];
+    [initiateTimer invalidate];
+    initiateTimer =nil;
+    self.initiateTimer=[NSTimer scheduledTimerWithTimeInterval:1.0 target:self selector:@selector(startScan) userInfo:nil repeats:YES];
 
    
     if([currentMacbookName rangeOfString:@"Sonus"].location !=NSNotFound)
@@ -161,7 +163,7 @@
     if(central.state==CBCentralManagerStatePoweredOn)
     {
         //Now do your scanning and retrievals
-        [self startScan];
+        self.initiateTimer=[NSTimer scheduledTimerWithTimeInterval:1.0 target:self selector:@selector(startScan) userInfo:nil repeats:YES];
     }
 }
 
@@ -192,7 +194,7 @@
     //the manager found a device, we will stop and invalidate the timer
     NSLog(@"ap - %@ name --  %@",RSSI, aPeripheral.name);
     
-    if(aPeripheral && [aPeripheral.name rangeOfString:@"My Arduino" ].location!=NSNotFound && [RSSI intValue] > -50)
+    if(aPeripheral && [aPeripheral.name rangeOfString:@"My Arduino" ].location!=NSNotFound && [RSSI intValue] > threshold)
     {
      
         [manager connectPeripheral:aPeripheral options:nil];
@@ -264,7 +266,7 @@
     NSLog(@"connected -- %@",aPeripheral);
 	self.connected = @"Connected";
     [self sendData];
-    self.rssiTimer = [NSTimer scheduledTimerWithTimeInterval:1.0 target:self selector:@selector(checkRssi) userInfo:nil repeats:YES];
+    self.rssiTimer = [NSTimer scheduledTimerWithTimeInterval:0.0 target:self selector:@selector(checkRssi) userInfo:nil repeats:YES];
     
   }
 
@@ -279,7 +281,7 @@
 {
     NSLog(@"rssi -- %@", peripheral.RSSI);
 
-    if([peripheral.RSSI intValue] < -50)
+    if([peripheral.RSSI intValue] < -threshold)
     {
         [manager cancelPeripheralConnection:self.proxima];
         [self.rssiTimer invalidate];
@@ -303,7 +305,8 @@
         [self.proxima setDelegate:nil];
         self.proxima = nil;
     }
-   
+    [initiateTimer invalidate];
+    initiateTimer =nil;
      self.initiateTimer=[NSTimer scheduledTimerWithTimeInterval:1.0 target:self selector:@selector(startScan) userInfo:nil repeats:YES];
     
 }
@@ -401,7 +404,7 @@
             [self.rssiTimer invalidate];
             self.rssiTimer = nil;
             
-            self.rssiTimer = [NSTimer scheduledTimerWithTimeInterval:1.0 target:self selector:@selector(checkRssi) userInfo:nil repeats:YES];
+            self.rssiTimer = [NSTimer scheduledTimerWithTimeInterval:0.0 target:self selector:@selector(checkRssi) userInfo:nil repeats:YES];
             return;
         }
     }
@@ -424,7 +427,7 @@
     [self.rssiTimer invalidate];
     self.rssiTimer = nil;
     
-    self.rssiTimer = [NSTimer scheduledTimerWithTimeInterval:1.0 target:self selector:@selector(checkRssi) userInfo:nil repeats:YES];
+    self.rssiTimer = [NSTimer scheduledTimerWithTimeInterval:0.0 target:self selector:@selector(checkRssi) userInfo:nil repeats:YES];
     
     return;
     
